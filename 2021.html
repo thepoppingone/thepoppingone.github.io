@@ -6,36 +6,43 @@
 -->
 <html>
 	<head>
-		<title>Big Picture by HTML5 UP</title>
+		<title>To Milk</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-		<link rel="stylesheet" href="2021/assets/css/main.css" />
+        <link rel="stylesheet" href="2021/assets/css/main.css" />
+        <link rel="shortcut icon" type="image/png" href="2021/images/favicon.ico"/>
 		<noscript><link rel="stylesheet" href="2021/assets/css/noscript.css" /></noscript>
-	</head>
+    </head>
+    <audio id="audioID" autoplay loop> 
+        <source src="2021/audio.mp3"  type="audio/mp3"> 
+    </audio>
 	<body class="is-preload">
 
 		<!-- Header -->
 			<header id="header">
-				<h1>Big Picture</h1>
+				<h1>
+                    <btn class="fas fa-play-circle" id="audio-control" onclick="PlayStop()" type="button"></btn>
+                    Happy Birthday Milk. 
+                </h1>
 				<nav>
 					<ul>
-						<li><a href="#intro">Intro</a></li>
-						<li><a href="#one">What I Do</a></li>
-						<li><a href="#two">Who I Am</a></li>
-						<li><a href="#work">My Work</a></li>
-						<li><a href="#contact">Contact</a></li>
+						<li><a href="#intro">From</a></li>
+						<li><a href="#one">Your Husband</a></li>
+						<li><a href="#two">Wang Poh Peng</a></li>
+						<li><a href="#work">In Year</a></li>
+						<li><a href="#contact">2021</a></li>
 					</ul>
-				</nav>
+                </nav>
+                
 			</header>
 
 		<!-- Intro -->
 			<section id="intro" class="main style1 dark fullscreen">
 				<div class="content">
 					<header>
-						<h2>Hey.</h2>
+						<h2>Helloo  詩雅.</h2>
 					</header>
-					<p>Welcome to <strong>Big Picture</strong> a responsive site template designed by <a href="https://html5up.net">HTML5 UP</a><br />
-					and released for free under the <a href="https://html5up.net/license">Creative Commons Attribution license</a>.</p>
+					<p><strong>2021年</strong> - 你的<strong>生日礼物</strong></p>
 					<footer>
 						<a href="#one" class="button style2 down">More</a>
 					</footer>
@@ -46,11 +53,10 @@
 			<section id="one" class="main style2 right dark fullscreen">
 				<div class="content box style2">
 					<header>
-						<h2>What I Do</h2>
+						<h2>2020</h2>
 					</header>
-					<p>Lorem ipsum dolor sit amet et sapien sed elementum egestas dolore condimentum.
-					Fusce blandit ultrices sapien, in accumsan orci rhoncus eu. Sed sodales venenatis arcu,
-					id varius justo euismod in. Curabitur egestas consectetur magna.</p>
+                    <p>二零二零年本來應該是我們人生里非常開心的一年。我們應該已經開始一起生活，一起住在自己擁有的家。</p>
+                    <p>但是現在我們只能通過電話和對方溝通也不能見面。</p>
 				</div>
 				<a href="#two" class="button style2 down anchored">Next</a>
 			</section>
@@ -66,7 +72,32 @@
 					id varius justo euismod in. Curabitur egestas consectetur magna.</p>
 				</div>
 				<a href="#work" class="button style2 down anchored">Next</a>
+            </section>
+            
+        <!-- Three -->
+			<section id="three" class="main style2 right dark fullscreen">
+				<div class="content box style2">
+					<header>
+						<h2>2020</h2>
+					</header>
+                    <p>二零二零年本來應該是我們人生里非常開心的一年。我們應該已經開始一起生活，一起住在自己擁有的家。</p>
+                    <p>但是現在我們只能通過電話和對方溝通也不能見面。</p>
+				</div>
+				<a href="#four" class="button style2 down anchored">Next</a>
 			</section>
+
+		<!-- Four -->
+			<section id="four" class="main style2 left dark fullscreen">
+				<div class="content box style2">
+					<header>
+						<h2>Who I Am</h2>
+					</header>
+					<p>Lorem ipsum dolor sit amet et sapien sed elementum egestas dolore condimentum.
+					Fusce blandit ultrices sapien, in accumsan orci rhoncus eu. Sed sodales venenatis arcu,
+					id varius justo euismod in. Curabitur egestas consectetur magna.</p>
+				</div>
+				<a href="#work" class="button style2 down anchored">Next</a>
+			</section>    
 
 		<!-- Work -->
 			<section id="work" class="main style3 primary">
@@ -145,7 +176,18 @@
 
 			</footer>
 
-		<!-- Scripts -->
+        <!-- Scripts -->
+           <script>
+            document.addEventListener('click', PlayStop);
+            var myaudio = document.getElementById("audioID");
+            var audioControl = document.getElementById("audio-control");
+            
+            function PlayStop() {
+                audioControl.className = myaudio.paused ? "fas fa-pause-circle" :  "fas fa-play-circle" ;
+                document.removeEventListener('click', PlayStop);
+                return myaudio.paused ? myaudio.play() : myaudio.pause();
+            };
+            </script>
 			<script src="2021/assets/js/jquery.min.js"></script>
 			<script src="2021/assets/js/jquery.poptrox.min.js"></script>
 			<script src="2021/assets/js/jquery.scrolly.min.js"></script>
