@@ -23,6 +23,7 @@
 				<h1 onclick="PlayStop()">
                     <btn class="fas fa-play-circle" id="audio-control" type="button"></btn>
                     Happy Birthday Milk. 
+                    <i id="spinner" style='padding: 5px 5px;' class="fas fa-stroopwafel"></i> My Only One
                 </h1>
 				<nav>
 					<ul>
@@ -190,9 +191,11 @@
             document.addEventListener('click', PlayStop);
             var myaudio = document.getElementById("audioID");
             var audioControl = document.getElementById("audio-control");
+            var spinnerItem = document.getElementById("spinner");
             
             function PlayStop() {
                 audioControl.className = myaudio.paused ? "fas fa-pause-circle" :  "fas fa-play-circle" ;
+                spinnerItem.className = myaudio.paused ? "fas fa-stroopwafel fa-spin" :  "fas fa-stroopwafel" ;
                 document.removeEventListener('click', PlayStop);
                 return myaudio.paused ? myaudio.play() : myaudio.pause();
             };
