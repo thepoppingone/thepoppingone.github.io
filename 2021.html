@@ -20,8 +20,8 @@
 
 		<!-- Header -->
 			<header id="header">
-				<h1>
-                    <btn class="fas fa-play-circle" id="audio-control" onclick="PlayStop()" type="button"></btn>
+				<h1 onclick="PlayStop()">
+                    <btn class="fas fa-play-circle" id="audio-control" type="button"></btn>
                     Happy Birthday Milk. 
                 </h1>
 				<nav>
@@ -42,7 +42,7 @@
 					<header>
 						<h2>Helloo  詩雅.</h2>
 					</header>
-					<p><strong>2021年</strong> - 你的<strong>生日礼物</strong></p>
+					<p><strong>2021年</strong> - <strong>生日礼物</strong></p>
 					<footer>
 						<a href="#one" class="button style2 down">More</a>
 					</footer>
@@ -116,6 +116,12 @@
 							</article>
 							<article class="from-right">
 								<a href="2021/images/fulls/02.jpg" class="image fit"><img src="2021/images/thumbs/02.jpg" title="Airchitecture II" alt="" /></a>
+                            </article>
+                            <article class="from-left">
+								<a href="2021/images/fulls/01a.jpg" class="image fit"><img src="2021/images/thumbs/01a.jpg" title="Air Lounge" alt="" /></a>
+							</article>
+							<article class="from-right">
+								<a href="2021/images/fulls/02a.jpg" class="image fit"><img src="2021/images/thumbs/02a.jpg" title="Carry on" alt="" /></a>
 							</article>
 							<article class="from-left">
 								<a href="2021/images/fulls/03.jpg" class="image fit"><img src="2021/images/thumbs/03.jpg" title="Air Lounge" alt="" /></a>
@@ -178,6 +184,9 @@
 
         <!-- Scripts -->
            <script>
+            window.onbeforeunload = function () {
+                window.scrollTo(0, 0);
+            }
             document.addEventListener('click', PlayStop);
             var myaudio = document.getElementById("audioID");
             var audioControl = document.getElementById("audio-control");
