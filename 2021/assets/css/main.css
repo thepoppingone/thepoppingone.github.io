@@ -2125,11 +2125,11 @@ input, select, textarea {
 			}
 
 				.main.style2:before, .main.style2:after {
-					display: none !important;
+					display: block !important;
 				}
 
 				.main.style2 .button.anchored {
-					display: none;
+					display: block;
 				}
 
 				.main.style2 .content {
