@@ -1,0 +1,146 @@
+<!DOCTYPE HTML>
+<!--
+	Strata by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Fuel Calculator - JB Malaysia Entry</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!--[if lte IE 8]><script src="assets/js/ie/html5shiv.js"></script><![endif]-->
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="shortcut icon" type="image/png" href="images/favicon.png"/>
+		<!--[if lte IE 8]><link rel="stylesheet" href="assets/css/ie8.css" /><![endif]-->
+	</head>
+	<body id="top">
+
+		<!-- Header -->
+			<header id="header">
+				<div class="inner">
+					<a href="index.html" class="image avatar"><img src="images/avatar.png" alt="" /></a>
+					<h1><strong>Fuel Calculator</strong><br />
+					Calculate fuel needed<br />
+					for JB Malaysia entry<br />
+					(75% tank requirement)</h1>
+				</div>
+			</header>
+
+		<!-- Main -->
+			<div id="main">
+				<section id="one">
+					<header class="major">
+						<h2>JB Malaysia Fuel Calculator</h2>
+					</header>
+					<p>Enter your fuel tank details below to calculate how much petrol you need to refill to meet the 75% tank requirement for entering Johor Bahru, Malaysia.</p>
+
+					<form id="fuelForm" onsubmit="calculateFuel(event)">
+						<div class="row uniform">
+							<div class="12u$">
+								<label for="tankSize">Fuel Tank Size (litres)</label>
+								<input type="number" id="tankSize" name="tankSize" step="0.1" min="1" required placeholder="e.g., 50" />
+							</div>
+
+							<div class="12u$">
+								<label for="currentFuel">Current Fuel Level (%)</label>
+								<input type="number" id="currentFuel" name="currentFuel" step="1" min="0" max="100" required placeholder="e.g., 25" />
+							</div>
+
+							<div class="12u$">
+								<ul class="actions">
+									<li><input type="submit" value="Calculate" class="special" /></li>
+									<li><input type="reset" value="Reset" /></li>
+								</ul>
+							</div>
+						</div>
+					</form>
+
+					<div id="result" style="display: none;" class="box">
+						<h3>Result</h3>
+						<p><strong>Fuel required to top up to 75%:</strong></p>
+						<h2 id="resultValue" style="color: #4acaa8; font-size: 3em; margin: 0.5em 0;">0 litres</h2>
+						<p id="resultDetails"></p>
+					</div>
+
+					<hr />
+
+					<h3>Calculation Details</h3>
+					<ul>
+						<li><strong>Target fuel level:</strong> 75% of tank size (JB Malaysia entry requirement)</li>
+						<li><strong>Current fuel:</strong> tank size × current percentage</li>
+						<li><strong>Fuel needed:</strong> target fuel - current fuel</li>
+					</ul>
+				</section>
+
+				<section id="two">
+					<h2>Back to Home</h2>
+					<ul class="actions">
+						<li><a href="index.html" class="button">Return to Homepage</a></li>
+					</ul>
+				</section>
+			</div>
+
+		<!-- Footer -->
+			<footer id="footer">
+				<div class="inner">
+					<ul class="icons">
+						<li><a target="_blank" href="https://twitter.com/pohpengone" class="icon fa-twitter"><span class="label">Twitter</span></a></li>
+						<li><a target="_blank" href="https://github.com/thepoppingoe" class="icon fa-github"><span class="label">Github</span></a></li>
+						<li><a target="_blank" href="https://500px.com/wangpp1" class="icon fa-500px"><span class="label">Dribbble</span></a></li>
+						<li><a target="_blank" href="https://instagram.com/thePoppingOne" class="icon fa-instagram"><span class="label">Email</span></a></li>
+						<li><a target="_blank" href="https://sg.linkedin.com/in/pohpeng" class="icon fa-linkedin"><span class="label">LinkedIn</span></a>
+						<li><a target="_blank" href="https://wangpp.medium.com/" class="fa-brands fa-medium"><span class="label">Medium</span></a>
+					 </li>
+					</ul>
+					<ul class="copyright">
+						<li>&copy; thepoppingone</li><li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+					</ul>
+				</div>
+			</footer>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.poptrox.min.js"></script>
+			<script src="assets/js/skel.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<!--[if lte IE 8]><script src="assets/js/ie/respond.min.js"></script><![endif]-->
+			<script src="assets/js/main.js"></script>
+
+			<script>
+				function calculateFuel(event) {
+					event.preventDefault();
+
+					var tankSize = parseFloat(document.getElementById('tankSize').value);
+					var currentFuelPercent = parseFloat(document.getElementById('currentFuel').value);
+
+					if (isNaN(tankSize) || isNaN(currentFuelPercent)) {
+						alert('Please enter valid numbers');
+						return;
+					}
+
+					var targetFuel = tankSize * 0.75;
+					var currentFuelLitres = tankSize * (currentFuelPercent / 100);
+					var fuelNeeded = targetFuel - currentFuelLitres;
+
+					var resultDiv = document.getElementById('result');
+					var resultValue = document.getElementById('resultValue');
+					var resultDetails = document.getElementById('resultDetails');
+
+					if (fuelNeeded <= 0) {
+						resultValue.textContent = '0 litres';
+						resultDetails.innerHTML = 'You already have more than 75% fuel in your tank (' + currentFuelLitres.toFixed(1) + ' litres / ' + targetFuel.toFixed(1) + ' litres required)';
+					} else {
+						resultValue.textContent = fuelNeeded.toFixed(1) + ' litres';
+						resultDetails.innerHTML = 'Current fuel: ' + currentFuelLitres.toFixed(1) + ' litres (' + currentFuelPercent + '%)<br />' +
+						                         'Target fuel (75%): ' + targetFuel.toFixed(1) + ' litres<br />' +
+						                         'You need to add: <strong>' + fuelNeeded.toFixed(1) + ' litres</strong>';
+					}
+
+					resultDiv.style.display = 'block';
+					resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+				}
+			</script>
+
+	</body>
+</html>
