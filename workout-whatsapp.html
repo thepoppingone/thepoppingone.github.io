@@ -1,0 +1,640 @@
+<!DOCTYPE HTML>
+<!--
+	Strata by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Workout WhatsApp Generator</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!--[if lte IE 8]><script src="assets/js/ie/html5shiv.js"></script><![endif]-->
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="shortcut icon" type="image/png" href="images/favicon.png"/>
+		<!--[if lte IE 8]><link rel="stylesheet" href="assets/css/ie8.css" /><![endif]-->
+		<style>
+			.picker-box {
+				border: solid 2px #efefef;
+				border-radius: 0.35em;
+				padding: 1.5em;
+				margin: 0 0 1.5em 0;
+			}
+
+			.picker-section {
+				margin: 0 0 1.25em 0;
+			}
+
+			.picker-buttons {
+				margin: 0 0 0.5em 0;
+			}
+
+			.picker-buttons .button,
+			.picker-buttons button {
+				margin: 0 0.5em 0.5em 0;
+			}
+
+			.picker-buttons .active {
+				background-color: #4acaa8;
+				color: #ffffff !important;
+				box-shadow: none;
+			}
+
+			.picker-status {
+				font-weight: 600;
+				margin: 0 0 1em 0;
+			}
+		</style>
+	</head>
+	<body id="top">
+
+		<!-- Header -->
+			<header id="header">
+				<div class="inner">
+					<a href="index.html" class="image avatar"><img src="images/avatar.png" alt="" /></a>
+					<h1><strong>Workout WhatsApp Generator</strong><br />
+					Prepare your workout update<br />
+					and send it straight to<br />
+					your fitness trainer</h1>
+				</div>
+			</header>
+
+		<!-- Main -->
+			<div id="main">
+				<section id="one">
+					<header class="major">
+						<h2>Workout Message Generator</h2>
+					</header>
+					<p>Fill in your workout details, use the exercise picker if you want faster logging, then open the message directly in WhatsApp.</p>
+
+					<form id="workoutForm" onsubmit="openWhatsApp(event)">
+						<div class="row uniform">
+							<div class="6u 12u$(xsmall)">
+								<label for="workoutDate">Workout Date</label>
+								<input type="date" id="workoutDate" name="workoutDate" required />
+							</div>
+
+							<div class="6u$ 12u$(xsmall)">
+								<label for="workoutTime">Workout Time</label>
+								<input type="time" id="workoutTime" name="workoutTime" required />
+							</div>
+
+							<div class="6u 12u$(xsmall)">
+								<label for="duration">Duration (minutes)</label>
+								<input type="number" id="duration" name="duration" min="1" step="1" required placeholder="e.g., 45" />
+							</div>
+
+							<div class="6u$ 12u$(xsmall)">
+								<label for="workoutType">Workout Type</label>
+								<input type="text" id="workoutType" name="workoutType" required placeholder="e.g., Upper body, Pull day, Legs, IPPT" />
+							</div>
+
+							<div class="12u$">
+								<div class="picker-box">
+									<h3>Exercise Picker</h3>
+									<p>Select a category, tap the exercise, then tap the load and reps. Each added set is grouped into the workout log below.</p>
+
+									<div class="picker-section">
+										<label>Category</label>
+										<div id="categoryButtons" class="picker-buttons"></div>
+									</div>
+
+									<div class="picker-section">
+										<label>Exercise</label>
+										<div id="exerciseButtons" class="picker-buttons"></div>
+									</div>
+
+									<div class="row uniform">
+										<div class="6u 12u$(xsmall)">
+											<label>Load / Weight</label>
+											<div id="loadButtons" class="picker-buttons"></div>
+											<input type="text" id="customLoad" placeholder="Or type custom load, e.g., 20kg, 30kg total, Neutral" />
+										</div>
+
+										<div class="6u$ 12u$(xsmall)">
+											<label>Reps</label>
+											<div id="repButtons" class="picker-buttons"></div>
+											<input type="number" id="customReps" min="1" step="1" placeholder="Or type reps, e.g., 12" />
+										</div>
+									</div>
+
+									<p id="pickerStatus" class="picker-status">Choose an exercise to start adding sets.</p>
+
+									<ul class="actions">
+										<li><input type="button" value="Add Set" onclick="addWorkoutSet()" /></li>
+										<li><input type="button" value="Undo Last Set" onclick="undoWorkoutSet()" /></li>
+										<li><input type="button" value="Clear Workout Log" onclick="clearWorkoutLog()" /></li>
+									</ul>
+
+									<label for="workoutLog">Workout Log</label>
+									<textarea id="workoutLog" name="workoutLog" rows="12" placeholder="Your selected exercises and sets will appear here."></textarea>
+								</div>
+							</div>
+
+							<div class="12u$">
+								<label for="messageMode">Message Mode</label>
+								<select id="messageMode" name="messageMode" onchange="handleModeChange()">
+									<option value="standard">Standard workout update</option>
+									<option value="ippt">IPPT training mode</option>
+								</select>
+							</div>
+
+							<div class="12u$">
+								<label for="notes">Notes (optional)</label>
+								<textarea id="notes" name="notes" rows="4" placeholder="e.g., Felt good today, last set was hard, focused on form"></textarea>
+							</div>
+
+							<div class="12u$">
+								<ul class="actions">
+									<li><input type="submit" value="Open in WhatsApp" class="special" /></li>
+									<li><input type="button" value="Preview Message" onclick="previewMessage()" /></li>
+									<li><input type="reset" value="Reset" onclick="resetPreview()" /></li>
+								</ul>
+							</div>
+						</div>
+					</form>
+
+					<div id="result" style="display: none;" class="box">
+						<h3>Message Preview</h3>
+						<pre id="messagePreview" style="white-space: pre-wrap; margin: 0;"></pre>
+					</div>
+
+					<hr />
+
+					<h3>Message Format</h3>
+					<ul>
+						<li><strong>Header:</strong> starts with <code>*Workout Update:*</code> so WhatsApp shows it in bold</li>
+						<li><strong>Standard mode:</strong> includes date, time, duration, workout type, grouped exercise log, and optional notes</li>
+						<li><strong>Exercise picker:</strong> lets you tap category, exercise, load, and reps instead of typing each set manually</li>
+						<li><strong>IPPT training mode:</strong> inserts your interval template and appends the entered training duration</li>
+					</ul>
+				</section>
+
+				<section id="two">
+					<h2>Back to Home</h2>
+					<ul class="actions">
+						<li><a href="index.html" class="button">Return to Homepage</a></li>
+					</ul>
+				</section>
+			</div>
+
+		<!-- Footer -->
+			<footer id="footer">
+				<div class="inner">
+					<ul class="icons">
+						<li><a target="_blank" href="https://twitter.com/pohpengone" class="icon fa-twitter"><span class="label">Twitter</span></a></li>
+						<li><a target="_blank" href="https://github.com/thepoppingoe" class="icon fa-github"><span class="label">Github</span></a></li>
+						<li><a target="_blank" href="https://500px.com/wangpp1" class="icon fa-500px"><span class="label">Dribbble</span></a></li>
+						<li><a target="_blank" href="https://instagram.com/thePoppingOne" class="icon fa-instagram"><span class="label">Email</span></a></li>
+						<li><a target="_blank" href="https://sg.linkedin.com/in/pohpeng" class="icon fa-linkedin"><span class="label">LinkedIn</span></a>
+						<li><a target="_blank" href="https://wangpp.medium.com/" class="fa-brands fa-medium"><span class="label">Medium</span></a>
+					 </li>
+					</ul>
+					<ul class="copyright">
+						<li>&copy; thepoppingone</li><li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+					</ul>
+				</div>
+			</footer>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.poptrox.min.js"></script>
+			<script src="assets/js/skel.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<!--[if lte IE 8]><script src="assets/js/ie/respond.min.js"></script><![endif]-->
+			<script src="assets/js/main.js"></script>
+
+			<script>
+				var TRAINER_PHONE = '6591734445';
+				var workoutEntries = [];
+				var selectedCategory = '';
+				var selectedExercise = '';
+				var selectedLoad = '';
+				var selectedReps = '';
+				var exercisePresets = {
+					arms: [
+						'Bicep plate loaded',
+						'Cable bicep curl',
+						'Cable hammer curl',
+						'Dumbbell bicep curl',
+						'Incline dumbbell curl',
+						'Preacher curl',
+						'Barbell curl',
+						'Cable triceps extension',
+						'Overhead triceps extension',
+						'Tricep pushdown',
+						'Rope tricep pushdown',
+						'Skull crushers',
+						'Bench dips'
+					],
+					chest: [
+						'Chest press plate loaded',
+						'Incline chest press',
+						'Flat dumbbell press',
+						'Incline dumbbell press',
+						'Machine chest fly',
+						'Cable fly',
+						'Push ups',
+						'Seated dips'
+					],
+					shoulders: [
+						'Shoulder press',
+						'Dumbbell shoulder press',
+						'Arnold press',
+						'Lateral raise',
+						'Front raise',
+						'Rear delt fly',
+						'Face pull',
+						'Upright row'
+					],
+					back: [
+						'Pull ups',
+						'Lat pulldown',
+						'Seated cable row',
+						'Single arm dumbbell row',
+						'T bar row',
+						'Barbell bent over row',
+						'Romanian deadlift',
+						'Deadlift'
+					],
+					legs: [
+						'Dumbbell RDL',
+						'Barbell RDL',
+						'Deadlift',
+						'Trap bar deadlift',
+						'Glute thrust',
+						'Bulgarian split squat',
+						'Walking lunges',
+						'Hamstring curl',
+						'Leg extension',
+						'Goblet squat',
+						'Back squat',
+						'Front squat',
+						'Leg press'
+					],
+					core: [
+						'Crunches',
+						'Cable crunch',
+						'Plank',
+						'Hanging knee raise',
+						'Russian twist'
+					],
+					cardio: [
+						'Run',
+						'Incline walking',
+						'Treadmill intervals',
+						'Rowing machine',
+						'Bike',
+						'Stair climber'
+					]
+				};
+				var quickLoads = ['10kg', '15kg', '17.5kg', '20kg', '25kg', '30kg', '40kg', 'Neutral', 'Overhand'];
+				var quickReps = ['8', '10', '12', '14', '15', '20'];
+
+				function pad(value) {
+					return value < 10 ? '0' + value : value;
+				}
+
+				function formatDate(dateValue) {
+					var date = new Date(dateValue + 'T00:00:00');
+					if (isNaN(date.getTime())) {
+						return '';
+					}
+
+					var months = [
+						'January', 'February', 'March', 'April', 'May', 'June',
+						'July', 'August', 'September', 'October', 'November', 'December'
+					];
+
+					return date.getDate() + ' ' + months[date.getMonth()] + ' ' + date.getFullYear();
+				}
+
+				function formatTime(timeValue) {
+					if (!timeValue) {
+						return '';
+					}
+
+					var parts = timeValue.split(':');
+					if (parts.length < 2) {
+						return timeValue;
+					}
+
+					var hours = parseInt(parts[0], 10);
+					var minutes = parts[1];
+					var suffix = hours >= 12 ? 'PM' : 'AM';
+					var displayHour = hours % 12;
+					if (displayHour === 0) {
+						displayHour = 12;
+					}
+
+					return displayHour + ':' + minutes + ' ' + suffix;
+				}
+
+				function sanitizePhone(phone) {
+					return phone.replace(/[^0-9]/g, '');
+				}
+
+				function toTitleCase(value) {
+					return value.charAt(0).toUpperCase() + value.slice(1);
+				}
+
+				function createButtons(containerId, values, activeValue, clickHandler, titleCase) {
+					var container = document.getElementById(containerId);
+					var i;
+					var button;
+
+					container.innerHTML = '';
+					for (i = 0; i < values.length; i++) {
+						button = document.createElement('button');
+						button.type = 'button';
+						button.className = 'button small' + (values[i] === activeValue ? ' active' : '');
+						button.textContent = titleCase ? toTitleCase(values[i]) : values[i];
+						button.setAttribute('data-value', values[i]);
+						button.onclick = clickHandler;
+						container.appendChild(button);
+					}
+				}
+
+				function renderCategoryButtons() {
+					createButtons('categoryButtons', Object.keys(exercisePresets), selectedCategory, function() {
+						selectedCategory = this.getAttribute('data-value');
+						selectedExercise = '';
+						renderCategoryButtons();
+						renderExerciseButtons();
+						updatePickerStatus();
+					}, true);
+				}
+
+				function renderExerciseButtons() {
+					var exercises = selectedCategory ? exercisePresets[selectedCategory] : [];
+					createButtons('exerciseButtons', exercises, selectedExercise, function() {
+						selectedExercise = this.getAttribute('data-value');
+						renderExerciseButtons();
+						updatePickerStatus();
+					}, false);
+				}
+
+				function renderLoadButtons() {
+					createButtons('loadButtons', quickLoads, selectedLoad, function() {
+						selectedLoad = this.getAttribute('data-value');
+						document.getElementById('customLoad').value = selectedLoad;
+						renderLoadButtons();
+						updatePickerStatus();
+					}, false);
+				}
+
+				function renderRepButtons() {
+					createButtons('repButtons', quickReps, selectedReps, function() {
+						selectedReps = this.getAttribute('data-value');
+						document.getElementById('customReps').value = selectedReps;
+						renderRepButtons();
+						updatePickerStatus();
+					}, false);
+				}
+
+				function updatePickerStatus() {
+					var loadValue = document.getElementById('customLoad').value.trim();
+					var repsValue = document.getElementById('customReps').value.trim();
+					var parts = [];
+
+					if (selectedCategory) {
+						parts.push('Category: ' + toTitleCase(selectedCategory));
+					}
+					if (selectedExercise) {
+						parts.push('Exercise: ' + selectedExercise);
+					}
+					if (loadValue) {
+						parts.push('Load: ' + loadValue);
+					}
+					if (repsValue) {
+						parts.push('Reps: ' + repsValue);
+					}
+
+					document.getElementById('pickerStatus').textContent = parts.length ? parts.join(' | ') : 'Choose an exercise to start adding sets.';
+				}
+
+				function rebuildWorkoutLog() {
+					var grouped = {};
+					var order = [];
+					var i;
+					var entry;
+					var lines = [];
+
+					for (i = 0; i < workoutEntries.length; i++) {
+						entry = workoutEntries[i];
+						if (!grouped[entry.exercise]) {
+							grouped[entry.exercise] = [];
+							order.push(entry.exercise);
+						}
+						grouped[entry.exercise].push(entry.load + ' x ' + entry.reps);
+					}
+
+					for (i = 0; i < order.length; i++) {
+						lines.push(order[i]);
+						lines.push(grouped[order[i]].join(', '));
+						if (i < order.length - 1) {
+							lines.push('');
+						}
+					}
+
+					document.getElementById('workoutLog').value = lines.join('\n');
+				}
+
+				function addWorkoutSet() {
+					var loadValue = document.getElementById('customLoad').value.trim();
+					var repsValue = document.getElementById('customReps').value.trim();
+
+					if (!selectedExercise || !loadValue || !repsValue) {
+						alert('Choose an exercise, then provide both load and reps before adding a set.');
+						return;
+					}
+
+					selectedLoad = loadValue;
+					selectedReps = repsValue;
+					workoutEntries.push({
+						category: selectedCategory,
+						exercise: selectedExercise,
+						load: loadValue,
+						reps: repsValue
+					});
+
+					rebuildWorkoutLog();
+					renderLoadButtons();
+					renderRepButtons();
+					updatePickerStatus();
+				}
+
+				function undoWorkoutSet() {
+					if (!workoutEntries.length) {
+						return;
+					}
+
+					workoutEntries.pop();
+					rebuildWorkoutLog();
+				}
+
+				function clearWorkoutLog() {
+					workoutEntries = [];
+					document.getElementById('workoutLog').value = '';
+				}
+
+				function buildMessage() {
+					var trainerPhone = sanitizePhone(TRAINER_PHONE);
+					var workoutDate = document.getElementById('workoutDate').value;
+					var workoutTime = document.getElementById('workoutTime').value;
+					var duration = document.getElementById('duration').value;
+					var workoutType = document.getElementById('workoutType').value.trim();
+					var messageMode = document.getElementById('messageMode').value;
+					var workoutLog = document.getElementById('workoutLog').value.trim();
+					var notes = document.getElementById('notes').value.trim();
+
+					if (!workoutDate || !workoutTime || !duration || !workoutType) {
+						return null;
+					}
+
+					var lines;
+					if (messageMode === 'ippt') {
+						lines = [
+							'*Workout Update:*',
+							'Date: ' + formatDate(workoutDate),
+							'Time: ' + formatTime(workoutTime),
+							'Workout: ' + workoutType,
+							'',
+							'IPPT training mode',
+							'1) Pushups: 20 reps',
+							'Rest 10sec',
+							'2) Crunches: 20 reps',
+							'Rest 20sec',
+							'Repeat 4 times',
+							'',
+							'Rest 5min, then start running',
+							'',
+							'Running:',
+							'400m: <record timing each round>',
+							'',
+							'Rest 3min',
+							'repeat x 5 rounds (total 2km)',
+							'',
+							'Increase rest time according if very tired',
+							'',
+							'COOLDOWN',
+							'',
+							'Duration of training: ' + duration + ' minutes'
+						];
+					} else {
+						lines = [
+							'*Workout Update:*',
+							'Date: ' + formatDate(workoutDate),
+							'Time: ' + formatTime(workoutTime),
+							'Duration: ' + duration + ' minutes',
+							'Workout: ' + workoutType
+						];
+
+						if (workoutLog) {
+							lines.push('');
+							lines.push('Exercises:');
+							lines.push(workoutLog);
+						}
+
+						if (notes) {
+							lines.push('');
+							lines.push('Notes: ' + notes);
+						}
+					}
+
+					return {
+						phone: trainerPhone,
+						message: lines.join('\n')
+					};
+				}
+
+				function showPreview(data) {
+					var resultDiv = document.getElementById('result');
+					var messagePreview = document.getElementById('messagePreview');
+
+					messagePreview.textContent = data.message;
+					resultDiv.style.display = 'block';
+				}
+
+				function previewMessage() {
+					var data = buildMessage();
+					if (!data) {
+						alert('Please complete all required fields before previewing the message.');
+						return;
+					}
+
+					showPreview(data);
+					document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+				}
+
+				function openWhatsApp(event) {
+					event.preventDefault();
+
+					var data = buildMessage();
+					if (!data) {
+						alert('Please complete all required fields before opening WhatsApp.');
+						return;
+					}
+
+					showPreview(data);
+					window.open('https://wa.me/' + data.phone + '?text=' + encodeURIComponent(data.message), '_blank');
+				}
+
+				function resetPreview() {
+					document.getElementById('result').style.display = 'none';
+					workoutEntries = [];
+					selectedCategory = '';
+					selectedExercise = '';
+					selectedLoad = '';
+					selectedReps = '';
+					renderCategoryButtons();
+					renderExerciseButtons();
+					renderLoadButtons();
+					renderRepButtons();
+					updatePickerStatus();
+				}
+
+				function handleModeChange() {
+					var messageMode = document.getElementById('messageMode').value;
+					var workoutType = document.getElementById('workoutType');
+					var notes = document.getElementById('notes');
+
+					if (messageMode === 'ippt') {
+						workoutType.value = 'IPPT Training';
+						notes.placeholder = 'Optional notes are not included in IPPT training mode.';
+					} else {
+						if (workoutType.value === 'IPPT Training') {
+							workoutType.value = '';
+						}
+						notes.placeholder = 'e.g., Felt good today, last set was hard, focused on form';
+					}
+				}
+
+				function setDefaultValues() {
+					var now = new Date();
+					document.getElementById('workoutDate').value = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+					document.getElementById('workoutTime').value = pad(now.getHours()) + ':' + pad(now.getMinutes());
+					document.getElementById('customLoad').oninput = function() {
+						selectedLoad = this.value.trim();
+						renderLoadButtons();
+						updatePickerStatus();
+					};
+					document.getElementById('customReps').oninput = function() {
+						selectedReps = this.value.trim();
+						renderRepButtons();
+						updatePickerStatus();
+					};
+
+					renderCategoryButtons();
+					renderExerciseButtons();
+					renderLoadButtons();
+					renderRepButtons();
+					handleModeChange();
+					updatePickerStatus();
+				}
+
+				setDefaultValues();
+			</script>
+
+	</body>
+</html>
