@@ -69,6 +69,14 @@
 
 					<form id="workoutForm" onsubmit="openWhatsApp(event)">
 						<div class="row uniform">
+							<div class="12u$">
+								<label for="messageMode">Mode</label>
+								<select id="messageMode" name="messageMode" onchange="handleModeChange()">
+									<option value="standard">General Workout</option>
+									<option value="ippt">IPPT Mode</option>
+								</select>
+							</div>
+
 							<div class="6u 12u$(xsmall)">
 								<label for="workoutDate">Workout Date</label>
 								<input type="date" id="workoutDate" name="workoutDate" required />
@@ -84,59 +92,99 @@
 								<input type="number" id="duration" name="duration" min="1" step="1" required placeholder="e.g., 45" />
 							</div>
 
-							<div class="6u$ 12u$(xsmall)">
-								<label for="workoutType">Workout Type</label>
-								<input type="text" id="workoutType" name="workoutType" required placeholder="e.g., Upper body, Pull day, Legs, IPPT" />
-							</div>
+							<!-- General Workout Section -->
+							<div id="generalSection">
+								<div class="6u$ 12u$(xsmall)">
+									<label for="workoutType">Workout Type</label>
+									<input type="text" id="workoutType" name="workoutType" placeholder="e.g., Upper body, Pull day, Legs" />
+								</div>
 
-							<div class="12u$">
-								<div class="picker-box">
-									<h3>Exercise Picker</h3>
-									<p>Select a category, tap the exercise, then tap the load and reps. Each added set is grouped into the workout log below.</p>
+								<div class="12u$">
+									<div class="picker-box">
+										<h3>Exercise Picker</h3>
+										<p>Select a category, tap the exercise, then tap the load and reps. Each added set is grouped into the workout log below.</p>
 
-									<div class="picker-section">
-										<label>Category</label>
-										<div id="categoryButtons" class="picker-buttons"></div>
-									</div>
-
-									<div class="picker-section">
-										<label>Exercise</label>
-										<div id="exerciseButtons" class="picker-buttons"></div>
-									</div>
-
-									<div class="row uniform">
-										<div class="6u 12u$(xsmall)">
-											<label>Load / Weight</label>
-											<div id="loadButtons" class="picker-buttons"></div>
-											<input type="text" id="customLoad" placeholder="Or type custom load, e.g., 20kg, 30kg total, Neutral" />
+										<div class="picker-section">
+											<label>Category</label>
+											<div id="categoryButtons" class="picker-buttons"></div>
 										</div>
 
-										<div class="6u$ 12u$(xsmall)">
-											<label>Reps</label>
-											<div id="repButtons" class="picker-buttons"></div>
-											<input type="number" id="customReps" min="1" step="1" placeholder="Or type reps, e.g., 12" />
+										<div class="picker-section">
+											<label>Exercise</label>
+											<div id="exerciseButtons" class="picker-buttons"></div>
 										</div>
+
+										<div class="row uniform">
+											<div class="6u 12u$(xsmall)">
+												<label>Load / Weight</label>
+												<div id="loadButtons" class="picker-buttons"></div>
+												<input type="text" id="customLoad" placeholder="Or type custom load, e.g., 20kg, 30kg total, Neutral" />
+											</div>
+
+											<div class="6u$ 12u$(xsmall)">
+												<label>Reps</label>
+												<div id="repButtons" class="picker-buttons"></div>
+												<input type="number" id="customReps" min="1" step="1" placeholder="Or type reps, e.g., 12" />
+											</div>
+										</div>
+
+										<p id="pickerStatus" class="picker-status">Choose an exercise to start adding sets.</p>
+
+										<ul class="actions">
+											<li><input type="button" value="Add Set" onclick="addWorkoutSet()" /></li>
+											<li><input type="button" value="Undo Last Set" onclick="undoWorkoutSet()" /></li>
+											<li><input type="button" value="Clear Workout Log" onclick="clearWorkoutLog()" /></li>
+										</ul>
+
+										<label for="workoutLog">Workout Log</label>
+										<textarea id="workoutLog" name="workoutLog" rows="12" placeholder="Your selected exercises and sets will appear here."></textarea>
 									</div>
-
-									<p id="pickerStatus" class="picker-status">Choose an exercise to start adding sets.</p>
-
-									<ul class="actions">
-										<li><input type="button" value="Add Set" onclick="addWorkoutSet()" /></li>
-										<li><input type="button" value="Undo Last Set" onclick="undoWorkoutSet()" /></li>
-										<li><input type="button" value="Clear Workout Log" onclick="clearWorkoutLog()" /></li>
-									</ul>
-
-									<label for="workoutLog">Workout Log</label>
-									<textarea id="workoutLog" name="workoutLog" rows="12" placeholder="Your selected exercises and sets will appear here."></textarea>
 								</div>
 							</div>
 
-							<div class="12u$">
-								<label for="messageMode">Message Mode</label>
-								<select id="messageMode" name="messageMode" onchange="handleModeChange()">
-									<option value="standard">Standard workout update</option>
-									<option value="ippt">IPPT training mode</option>
-								</select>
+							<!-- IPPT Mode Section -->
+							<div id="ipptSection" style="display: none;">
+								<div class="12u$">
+									<div class="picker-box">
+										<h3>IPPT Exercises</h3>
+
+										<div class="row uniform">
+											<div class="6u 12u$(xsmall)">
+												<label for="ipptPushups">Push Ups (reps)</label>
+												<input type="number" id="ipptPushups" min="0" step="1" placeholder="e.g., 40" />
+											</div>
+											<div class="6u$ 12u$(xsmall)">
+												<label for="ipptSitups">Sit Ups (reps)</label>
+												<input type="number" id="ipptSitups" min="0" step="1" placeholder="e.g., 40" />
+											</div>
+										</div>
+
+										<div class="row uniform">
+											<div class="6u 12u$(xsmall)">
+												<label for="ipptRunDistance">Running Distance</label>
+												<input type="text" id="ipptRunDistance" placeholder="e.g., 2.4km" />
+											</div>
+											<div class="6u$ 12u$(xsmall)">
+												<label for="ipptRunTiming">Running Timing</label>
+												<input type="text" id="ipptRunTiming" placeholder="e.g., 12:30" />
+											</div>
+										</div>
+
+										<hr />
+
+										<h4>Optional Exercises</h4>
+										<div class="row uniform">
+											<div class="6u 12u$(xsmall)">
+												<label for="ipptCrunches">Crunches (reps)</label>
+												<input type="number" id="ipptCrunches" min="0" step="1" placeholder="e.g., 20" />
+											</div>
+											<div class="6u$ 12u$(xsmall)">
+												<label for="ipptLegRaises">Leg Raises (reps)</label>
+												<input type="number" id="ipptLegRaises" min="0" step="1" placeholder="e.g., 15" />
+											</div>
+										</div>
+									</div>
+								</div>
 							</div>
 
 							<div class="12u$">
@@ -483,45 +531,63 @@
 					var workoutDate = document.getElementById('workoutDate').value;
 					var workoutTime = document.getElementById('workoutTime').value;
 					var duration = document.getElementById('duration').value;
-					var workoutType = document.getElementById('workoutType').value.trim();
 					var messageMode = document.getElementById('messageMode').value;
-					var workoutLog = document.getElementById('workoutLog').value.trim();
 					var notes = document.getElementById('notes').value.trim();
 
-					if (!workoutDate || !workoutTime || !duration || !workoutType) {
+					if (!workoutDate || !workoutTime || !duration) {
 						return null;
 					}
 
 					var lines;
 					if (messageMode === 'ippt') {
+						var pushups = document.getElementById('ipptPushups').value.trim();
+						var situps = document.getElementById('ipptSitups').value.trim();
+						var runDistance = document.getElementById('ipptRunDistance').value.trim();
+						var runTiming = document.getElementById('ipptRunTiming').value.trim();
+						var crunches = document.getElementById('ipptCrunches').value.trim();
+						var legRaises = document.getElementById('ipptLegRaises').value.trim();
+
 						lines = [
 							'*Workout Update:*',
 							'Date: ' + formatDate(workoutDate),
 							'Time: ' + formatTime(workoutTime),
-							'Workout: ' + workoutType,
-							'',
-							'IPPT training mode',
-							'1) Pushups: 20 reps',
-							'Rest 10sec',
-							'2) Crunches: 20 reps',
-							'Rest 20sec',
-							'Repeat 4 times',
-							'',
-							'Rest 5min, then start running',
-							'',
-							'Running:',
-							'400m: <record timing each round>',
-							'',
-							'Rest 3min',
-							'repeat x 5 rounds (total 2km)',
-							'',
-							'Increase rest time according if very tired',
-							'',
-							'COOLDOWN',
-							'',
-							'Duration of training: ' + duration + ' minutes'
+							'Duration: ' + duration + ' minutes',
+							'Workout: IPPT Training',
+							''
 						];
+
+						if (pushups) {
+							lines.push('Push Ups: ' + pushups + ' reps');
+						}
+						if (situps) {
+							lines.push('Sit Ups: ' + situps + ' reps');
+						}
+						if (runDistance || runTiming) {
+							var runLine = 'Running:';
+							if (runDistance) runLine += ' ' + runDistance;
+							if (runTiming) runLine += ' in ' + runTiming;
+							lines.push(runLine);
+						}
+
+						if (crunches || legRaises) {
+							lines.push('');
+							lines.push('Optional:');
+							if (crunches) lines.push('Crunches: ' + crunches + ' reps');
+							if (legRaises) lines.push('Leg Raises: ' + legRaises + ' reps');
+						}
+
+						if (notes) {
+							lines.push('');
+							lines.push('Notes: ' + notes);
+						}
 					} else {
+						var workoutType = document.getElementById('workoutType').value.trim();
+						var workoutLog = document.getElementById('workoutLog').value.trim();
+
+						if (!workoutType) {
+							return null;
+						}
+
 						lines = [
 							'*Workout Update:*',
 							'Date: ' + formatDate(workoutDate),
@@ -596,17 +662,15 @@
 
 				function handleModeChange() {
 					var messageMode = document.getElementById('messageMode').value;
-					var workoutType = document.getElementById('workoutType');
-					var notes = document.getElementById('notes');
+					var generalSection = document.getElementById('generalSection');
+					var ipptSection = document.getElementById('ipptSection');
 
 					if (messageMode === 'ippt') {
-						workoutType.value = 'IPPT Training';
-						notes.placeholder = 'Optional notes are not included in IPPT training mode.';
+						generalSection.style.display = 'none';
+						ipptSection.style.display = '';
 					} else {
-						if (workoutType.value === 'IPPT Training') {
-							workoutType.value = '';
-						}
-						notes.placeholder = 'e.g., Felt good today, last set was hard, focused on form';
+						generalSection.style.display = '';
+						ipptSection.style.display = 'none';
 					}
 				}
 
