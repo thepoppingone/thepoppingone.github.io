@@ -146,43 +146,63 @@
 							<div id="ipptSection" style="display: none;">
 								<div class="12u$">
 									<div class="picker-box">
-										<h3>IPPT Exercises</h3>
+										<h3>IPPT Exercise Picker</h3>
+										<p>Tap an exercise, enter reps (or distance/timing for running), then add each set.</p>
 
-										<div class="row uniform">
-											<div class="6u 12u$(xsmall)">
-												<label for="ipptPushups">Push Ups (reps)</label>
-												<input type="number" id="ipptPushups" min="0" step="1" placeholder="e.g., 40" />
-											</div>
-											<div class="6u$ 12u$(xsmall)">
-												<label for="ipptSitups">Sit Ups (reps)</label>
-												<input type="number" id="ipptSitups" min="0" step="1" placeholder="e.g., 40" />
+										<div class="picker-section">
+											<label>Exercise</label>
+											<div id="ipptExerciseButtons" class="picker-buttons"></div>
+										</div>
+
+										<div id="ipptRepsRow" class="row uniform">
+											<div class="12u$">
+												<label>Reps</label>
+												<div id="ipptRepButtons" class="picker-buttons"></div>
+												<input type="number" id="ipptCustomReps" min="1" step="1" placeholder="Or type reps, e.g., 20" />
 											</div>
 										</div>
 
-										<div class="row uniform">
+										<div id="ipptRunRow" class="row uniform" style="display: none;">
 											<div class="6u 12u$(xsmall)">
-												<label for="ipptRunDistance">Running Distance</label>
-												<input type="text" id="ipptRunDistance" placeholder="e.g., 2.4km" />
+												<label>Distance</label>
+												<div id="ipptDistanceButtons" class="picker-buttons"></div>
+												<input type="text" id="ipptCustomDistance" placeholder="Or type distance, e.g., 2.4km" />
 											</div>
 											<div class="6u$ 12u$(xsmall)">
-												<label for="ipptRunTiming">Running Timing</label>
-												<input type="text" id="ipptRunTiming" placeholder="e.g., 12:30" />
+												<label>Timing</label>
+												<input type="text" id="ipptCustomTiming" placeholder="e.g., 12:30" />
 											</div>
 										</div>
+
+										<p id="ipptPickerStatus" class="picker-status">Choose an exercise to start adding sets.</p>
+
+										<ul class="actions">
+											<li><input type="button" value="Add Set" onclick="addIpptSet()" /></li>
+											<li><input type="button" value="Undo Last Set" onclick="undoIpptSet()" /></li>
+											<li><input type="button" value="Clear Log" onclick="clearIpptLog()" /></li>
+										</ul>
 
 										<hr />
 
 										<h4>Optional Exercises</h4>
-										<div class="row uniform">
-											<div class="6u 12u$(xsmall)">
-												<label for="ipptCrunches">Crunches (reps)</label>
-												<input type="number" id="ipptCrunches" min="0" step="1" placeholder="e.g., 20" />
-											</div>
-											<div class="6u$ 12u$(xsmall)">
-												<label for="ipptLegRaises">Leg Raises (reps)</label>
-												<input type="number" id="ipptLegRaises" min="0" step="1" placeholder="e.g., 15" />
+										<div class="picker-section">
+											<div id="ipptOptionalButtons" class="picker-buttons"></div>
+										</div>
+
+										<div id="ipptOptionalRepsRow" class="row uniform">
+											<div class="12u$">
+												<label>Reps</label>
+												<div id="ipptOptionalRepButtons" class="picker-buttons"></div>
+												<input type="number" id="ipptOptionalCustomReps" min="1" step="1" placeholder="Or type reps, e.g., 15" />
 											</div>
 										</div>
+
+										<ul class="actions">
+											<li><input type="button" value="Add Optional Set" onclick="addIpptOptionalSet()" /></li>
+										</ul>
+
+										<label for="ipptWorkoutLog">Workout Log</label>
+										<textarea id="ipptWorkoutLog" name="ipptWorkoutLog" rows="12" placeholder="Your IPPT exercises and sets will appear here."></textarea>
 									</div>
 								</div>
 							</div>
@@ -338,6 +358,14 @@
 				};
 				var quickLoads = ['10kg', '15kg', '17.5kg', '20kg', '25kg', '30kg', '40kg', 'Neutral', 'Overhand'];
 				var quickReps = ['8', '10', '12', '14', '15', '20'];
+
+				var ipptExercises = ['Push Ups', 'Sit Ups', 'Running'];
+				var ipptOptionalExercises = ['Crunches', 'Leg Raises'];
+				var ipptQuickReps = ['10', '15', '20', '25', '30', '40', '50', '60'];
+				var ipptQuickDistances = ['400m', '800m', '1.2km', '1.6km', '2.0km', '2.4km'];
+				var ipptSelectedExercise = '';
+				var ipptSelectedOptionalExercise = '';
+				var ipptEntries = [];
 
 				function pad(value) {
 					return value < 10 ? '0' + value : value;
@@ -526,6 +554,187 @@
 					document.getElementById('workoutLog').value = '';
 				}
 
+				// --- IPPT Picker ---
+				function renderIpptExerciseButtons() {
+					createButtons('ipptExerciseButtons', ipptExercises, ipptSelectedExercise, function() {
+						ipptSelectedExercise = this.getAttribute('data-value');
+						renderIpptExerciseButtons();
+						toggleIpptInputs();
+						updateIpptPickerStatus();
+					}, false);
+				}
+
+				function renderIpptOptionalButtons() {
+					createButtons('ipptOptionalButtons', ipptOptionalExercises, ipptSelectedOptionalExercise, function() {
+						ipptSelectedOptionalExercise = this.getAttribute('data-value');
+						renderIpptOptionalButtons();
+						updateIpptPickerStatus();
+					}, false);
+				}
+
+				function renderIpptRepButtons() {
+					var selected = document.getElementById('ipptCustomReps').value.trim();
+					createButtons('ipptRepButtons', ipptQuickReps, selected, function() {
+						document.getElementById('ipptCustomReps').value = this.getAttribute('data-value');
+						renderIpptRepButtons();
+						updateIpptPickerStatus();
+					}, false);
+				}
+
+				function renderIpptOptionalRepButtons() {
+					var selected = document.getElementById('ipptOptionalCustomReps').value.trim();
+					createButtons('ipptOptionalRepButtons', ipptQuickReps, selected, function() {
+						document.getElementById('ipptOptionalCustomReps').value = this.getAttribute('data-value');
+						renderIpptOptionalRepButtons();
+						updateIpptPickerStatus();
+					}, false);
+				}
+
+				function renderIpptDistanceButtons() {
+					var selected = document.getElementById('ipptCustomDistance').value.trim();
+					createButtons('ipptDistanceButtons', ipptQuickDistances, selected, function() {
+						document.getElementById('ipptCustomDistance').value = this.getAttribute('data-value');
+						renderIpptDistanceButtons();
+						updateIpptPickerStatus();
+					}, false);
+				}
+
+				function toggleIpptInputs() {
+					var repsRow = document.getElementById('ipptRepsRow');
+					var runRow = document.getElementById('ipptRunRow');
+					if (ipptSelectedExercise === 'Running') {
+						repsRow.style.display = 'none';
+						runRow.style.display = '';
+					} else {
+						repsRow.style.display = '';
+						runRow.style.display = 'none';
+					}
+				}
+
+				function updateIpptPickerStatus() {
+					var parts = [];
+					if (ipptSelectedExercise) {
+						parts.push('Exercise: ' + ipptSelectedExercise);
+						if (ipptSelectedExercise === 'Running') {
+							var dist = document.getElementById('ipptCustomDistance').value.trim();
+							var time = document.getElementById('ipptCustomTiming').value.trim();
+							if (dist) parts.push('Distance: ' + dist);
+							if (time) parts.push('Timing: ' + time);
+						} else {
+							var reps = document.getElementById('ipptCustomReps').value.trim();
+							if (reps) parts.push('Reps: ' + reps);
+						}
+					}
+					document.getElementById('ipptPickerStatus').textContent = parts.length ? parts.join(' | ') : 'Choose an exercise to start adding sets.';
+				}
+
+				function rebuildIpptLog() {
+					var grouped = {};
+					var order = [];
+					var i, entry, lines = [];
+
+					for (i = 0; i < ipptEntries.length; i++) {
+						entry = ipptEntries[i];
+						if (!grouped[entry.exercise]) {
+							grouped[entry.exercise] = [];
+							order.push(entry.exercise);
+						}
+						grouped[entry.exercise].push(entry.detail);
+					}
+
+					for (i = 0; i < order.length; i++) {
+						lines.push(order[i]);
+						lines.push(grouped[order[i]].join(', '));
+						if (i < order.length - 1) lines.push('');
+					}
+
+					document.getElementById('ipptWorkoutLog').value = lines.join('\n');
+				}
+
+				function addIpptSet() {
+					if (!ipptSelectedExercise) {
+						alert('Choose an exercise first.');
+						return;
+					}
+
+					var detail;
+					if (ipptSelectedExercise === 'Running') {
+						var dist = document.getElementById('ipptCustomDistance').value.trim();
+						var time = document.getElementById('ipptCustomTiming').value.trim();
+						if (!dist && !time) {
+							alert('Enter a distance or timing for running.');
+							return;
+						}
+						detail = '';
+						if (dist) detail += dist;
+						if (dist && time) detail += ' in ';
+						if (time) detail += time;
+					} else {
+						var reps = document.getElementById('ipptCustomReps').value.trim();
+						if (!reps) {
+							alert('Enter the number of reps.');
+							return;
+						}
+						detail = reps + ' reps';
+					}
+
+					ipptEntries.push({ exercise: ipptSelectedExercise, detail: detail });
+					rebuildIpptLog();
+					updateIpptPickerStatus();
+				}
+
+				function addIpptOptionalSet() {
+					if (!ipptSelectedOptionalExercise) {
+						alert('Choose an optional exercise first.');
+						return;
+					}
+					var reps = document.getElementById('ipptOptionalCustomReps').value.trim();
+					if (!reps) {
+						alert('Enter the number of reps.');
+						return;
+					}
+					ipptEntries.push({ exercise: ipptSelectedOptionalExercise, detail: reps + ' reps' });
+					rebuildIpptLog();
+					updateIpptPickerStatus();
+				}
+
+				function undoIpptSet() {
+					if (!ipptEntries.length) return;
+					ipptEntries.pop();
+					rebuildIpptLog();
+				}
+
+				function clearIpptLog() {
+					ipptEntries = [];
+					document.getElementById('ipptWorkoutLog').value = '';
+				}
+
+				function initIpptPicker() {
+					renderIpptExerciseButtons();
+					renderIpptOptionalButtons();
+					renderIpptRepButtons();
+					renderIpptOptionalRepButtons();
+					renderIpptDistanceButtons();
+					toggleIpptInputs();
+					updateIpptPickerStatus();
+
+					document.getElementById('ipptCustomReps').oninput = function() {
+						renderIpptRepButtons();
+						updateIpptPickerStatus();
+					};
+					document.getElementById('ipptOptionalCustomReps').oninput = function() {
+						renderIpptOptionalRepButtons();
+						updateIpptPickerStatus();
+					};
+					document.getElementById('ipptCustomDistance').oninput = function() {
+						renderIpptDistanceButtons();
+						updateIpptPickerStatus();
+					};
+					document.getElementById('ipptCustomTiming').oninput = function() {
+						updateIpptPickerStatus();
+					};
+				}
+
 				function buildMessage() {
 					var trainerPhone = sanitizePhone(TRAINER_PHONE);
 					var workoutDate = document.getElementById('workoutDate').value;
@@ -540,40 +749,19 @@
 
 					var lines;
 					if (messageMode === 'ippt') {
-						var pushups = document.getElementById('ipptPushups').value.trim();
-						var situps = document.getElementById('ipptSitups').value.trim();
-						var runDistance = document.getElementById('ipptRunDistance').value.trim();
-						var runTiming = document.getElementById('ipptRunTiming').value.trim();
-						var crunches = document.getElementById('ipptCrunches').value.trim();
-						var legRaises = document.getElementById('ipptLegRaises').value.trim();
+						var ipptLog = document.getElementById('ipptWorkoutLog').value.trim();
 
 						lines = [
 							'*Workout Update:*',
 							'Date: ' + formatDate(workoutDate),
 							'Time: ' + formatTime(workoutTime),
 							'Duration: ' + duration + ' minutes',
-							'Workout: IPPT Training',
-							''
+							'Workout: IPPT Training'
 						];
 
-						if (pushups) {
-							lines.push('Push Ups: ' + pushups + ' reps');
-						}
-						if (situps) {
-							lines.push('Sit Ups: ' + situps + ' reps');
-						}
-						if (runDistance || runTiming) {
-							var runLine = 'Running:';
-							if (runDistance) runLine += ' ' + runDistance;
-							if (runTiming) runLine += ' in ' + runTiming;
-							lines.push(runLine);
-						}
-
-						if (crunches || legRaises) {
+						if (ipptLog) {
 							lines.push('');
-							lines.push('Optional:');
-							if (crunches) lines.push('Crunches: ' + crunches + ' reps');
-							if (legRaises) lines.push('Leg Raises: ' + legRaises + ' reps');
+							lines.push(ipptLog);
 						}
 
 						if (notes) {
@@ -658,6 +846,10 @@
 					renderLoadButtons();
 					renderRepButtons();
 					updatePickerStatus();
+					ipptEntries = [];
+					ipptSelectedExercise = '';
+					ipptSelectedOptionalExercise = '';
+					initIpptPicker();
 				}
 
 				function handleModeChange() {
@@ -693,6 +885,7 @@
 					renderExerciseButtons();
 					renderLoadButtons();
 					renderRepButtons();
+					initIpptPicker();
 					handleModeChange();
 					updatePickerStatus();
 				}
