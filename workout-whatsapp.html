@@ -89,20 +89,16 @@
 
 							<div class="6u 12u$(xsmall)">
 								<label for="duration">Duration (minutes)</label>
+								<div id="durationButtons" class="picker-buttons"></div>
 								<input type="number" id="duration" name="duration" min="1" step="1" required placeholder="e.g., 45" />
 							</div>
 
 							<!-- General Workout Section -->
 							<div id="generalSection">
-								<div class="6u$ 12u$(xsmall)">
-									<label for="workoutType">Workout Type</label>
-									<input type="text" id="workoutType" name="workoutType" placeholder="e.g., Upper body, Pull day, Legs" />
-								</div>
-
 								<div class="12u$">
 									<div class="picker-box">
 										<h3>Exercise Picker</h3>
-										<p>Select a category, tap the exercise, then tap the load and reps. Each added set is grouped into the workout log below.</p>
+										<p>Select a category, tap the exercise, then tap the workout details. Each added set is grouped into the workout log below.</p>
 
 										<div class="picker-section">
 											<label>Category</label>
@@ -116,13 +112,13 @@
 
 										<div class="row uniform">
 											<div class="6u 12u$(xsmall)">
-												<label>Load / Weight</label>
+												<label id="loadLabel">Load / Weight</label>
 												<div id="loadButtons" class="picker-buttons"></div>
 												<input type="text" id="customLoad" placeholder="Or type custom load, e.g., 20kg, 30kg total, Neutral" />
 											</div>
 
 											<div class="6u$ 12u$(xsmall)">
-												<label>Reps</label>
+												<label id="repsLabel">Reps</label>
 												<div id="repButtons" class="picker-buttons"></div>
 												<input type="number" id="customReps" min="1" step="1" placeholder="Or type reps, e.g., 12" />
 											</div>
@@ -232,8 +228,8 @@
 					<h3>Message Format</h3>
 					<ul>
 						<li><strong>Header:</strong> starts with <code>*Workout Update:*</code> so WhatsApp shows it in bold</li>
-						<li><strong>Standard mode:</strong> includes date, time, duration, workout type, grouped exercise log, and optional notes</li>
-						<li><strong>Exercise picker:</strong> lets you tap category, exercise, load, and reps instead of typing each set manually</li>
+						<li><strong>Standard mode:</strong> includes date, time, duration, grouped exercise log, and optional notes</li>
+						<li><strong>Exercise picker:</strong> lets you tap category, exercise, and workout details instead of typing each set manually</li>
 						<li><strong>IPPT training mode:</strong> inserts your interval template and appends the entered training duration</li>
 					</ul>
 				</section>
@@ -358,6 +354,9 @@
 				};
 				var quickLoads = ['10kg', '15kg', '17.5kg', '20kg', '25kg', '30kg', '40kg', 'Neutral', 'Overhand'];
 				var quickReps = ['8', '10', '12', '14', '15', '20'];
+				var quickDurations = ['60', '90', '120'];
+				var cardioDurations = ['10 min', '15 min', '20 min', '30 min', '45 min', '60 min'];
+				var cardioCalories = ['100', '150', '200', '250', '300', '400', '500'];
 
 				var ipptExercises = ['Push Ups', 'Sit Ups', 'Running'];
 				var ipptOptionalExercises = ['Crunches', 'Leg Raises'];
@@ -431,12 +430,51 @@
 					}
 				}
 
+				function isCardioSelected() {
+					return selectedCategory === 'cardio';
+				}
+
+				function getWorkoutDetailLabels() {
+					if (isCardioSelected()) {
+						return {
+							load: 'Duration',
+							reps: 'Total Calories Burnt',
+							loadPlaceholder: 'Or type duration, e.g., 30 min',
+							repsPlaceholder: 'Or type total calories burnt, e.g., 250',
+							missingAlert: 'Choose an exercise, then provide both duration and total calories burnt before adding a set.'
+						};
+					}
+
+					return {
+						load: 'Load / Weight',
+						reps: 'Reps',
+						loadPlaceholder: 'Or type custom load, e.g., 20kg, 30kg total, Neutral',
+						repsPlaceholder: 'Or type reps, e.g., 12',
+						missingAlert: 'Choose an exercise, then provide both load and reps before adding a set.'
+					};
+				}
+
+				function updateWorkoutDetailInputs() {
+					var labels = getWorkoutDetailLabels();
+					document.getElementById('loadLabel').textContent = labels.load;
+					document.getElementById('repsLabel').textContent = labels.reps;
+					document.getElementById('customLoad').placeholder = labels.loadPlaceholder;
+					document.getElementById('customReps').placeholder = labels.repsPlaceholder;
+				}
+
 				function renderCategoryButtons() {
 					createButtons('categoryButtons', Object.keys(exercisePresets), selectedCategory, function() {
 						selectedCategory = this.getAttribute('data-value');
 						selectedExercise = '';
+						selectedLoad = '';
+						selectedReps = '';
+						document.getElementById('customLoad').value = '';
+						document.getElementById('customReps').value = '';
 						renderCategoryButtons();
 						renderExerciseButtons();
+						renderLoadButtons();
+						renderRepButtons();
+						updateWorkoutDetailInputs();
 						updatePickerStatus();
 					}, true);
 				}
@@ -451,7 +489,7 @@
 				}
 
 				function renderLoadButtons() {
-					createButtons('loadButtons', quickLoads, selectedLoad, function() {
+					createButtons('loadButtons', isCardioSelected() ? cardioDurations : quickLoads, selectedLoad, function() {
 						selectedLoad = this.getAttribute('data-value');
 						document.getElementById('customLoad').value = selectedLoad;
 						renderLoadButtons();
@@ -460,12 +498,33 @@
 				}
 
 				function renderRepButtons() {
-					createButtons('repButtons', quickReps, selectedReps, function() {
+					createButtons('repButtons', isCardioSelected() ? cardioCalories : quickReps, selectedReps, function() {
 						selectedReps = this.getAttribute('data-value');
 						document.getElementById('customReps').value = selectedReps;
 						renderRepButtons();
 						updatePickerStatus();
 					}, false);
+				}
+
+				function renderDurationButtons() {
+					var container = document.getElementById('durationButtons');
+					var selectedDuration = document.getElementById('duration').value;
+					var i;
+					var button;
+
+					container.innerHTML = '';
+					for (i = 0; i < quickDurations.length; i++) {
+						button = document.createElement('button');
+						button.type = 'button';
+						button.className = 'button small' + (quickDurations[i] === selectedDuration ? ' active' : '');
+						button.textContent = quickDurations[i] + ' mins';
+						button.setAttribute('data-value', quickDurations[i]);
+						button.onclick = function() {
+							document.getElementById('duration').value = this.getAttribute('data-value');
+							renderDurationButtons();
+						};
+						container.appendChild(button);
+					}
 				}
 
 				function updatePickerStatus() {
@@ -480,10 +539,10 @@
 						parts.push('Exercise: ' + selectedExercise);
 					}
 					if (loadValue) {
-						parts.push('Load: ' + loadValue);
+						parts.push((isCardioSelected() ? 'Duration: ' : 'Load: ') + loadValue);
 					}
 					if (repsValue) {
-						parts.push('Reps: ' + repsValue);
+						parts.push((isCardioSelected() ? 'Calories: ' : 'Reps: ') + repsValue);
 					}
 
 					document.getElementById('pickerStatus').textContent = parts.length ? parts.join(' | ') : 'Choose an exercise to start adding sets.';
@@ -502,7 +561,11 @@
 							grouped[entry.exercise] = [];
 							order.push(entry.exercise);
 						}
-						grouped[entry.exercise].push(entry.load + ' x ' + entry.reps);
+						if (entry.category === 'cardio') {
+							grouped[entry.exercise].push(entry.load + ', ' + entry.reps + ' calories');
+						} else {
+							grouped[entry.exercise].push(entry.load + ' x ' + entry.reps);
+						}
 					}
 
 					for (i = 0; i < order.length; i++) {
@@ -521,7 +584,7 @@
 					var repsValue = document.getElementById('customReps').value.trim();
 
 					if (!selectedExercise || !loadValue || !repsValue) {
-						alert('Choose an exercise, then provide both load and reps before adding a set.');
+						alert(getWorkoutDetailLabels().missingAlert);
 						return;
 					}
 
@@ -769,19 +832,13 @@
 							lines.push('Notes: ' + notes);
 						}
 					} else {
-						var workoutType = document.getElementById('workoutType').value.trim();
 						var workoutLog = document.getElementById('workoutLog').value.trim();
-
-						if (!workoutType) {
-							return null;
-						}
 
 						lines = [
 							'*Workout Update:*',
 							'Date: ' + formatDate(workoutDate),
 							'Time: ' + formatTime(workoutTime),
-							'Duration: ' + duration + ' minutes',
-							'Workout: ' + workoutType
+							'Duration: ' + duration + ' minutes'
 						];
 
 						if (workoutLog) {
@@ -845,6 +902,7 @@
 					renderExerciseButtons();
 					renderLoadButtons();
 					renderRepButtons();
+					updateWorkoutDetailInputs();
 					updatePickerStatus();
 					ipptEntries = [];
 					ipptSelectedExercise = '';
@@ -870,6 +928,9 @@
 					var now = new Date();
 					document.getElementById('workoutDate').value = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
 					document.getElementById('workoutTime').value = pad(now.getHours()) + ':' + pad(now.getMinutes());
+					document.getElementById('duration').oninput = function() {
+						renderDurationButtons();
+					};
 					document.getElementById('customLoad').oninput = function() {
 						selectedLoad = this.value.trim();
 						renderLoadButtons();
@@ -883,6 +944,7 @@
 
 					renderCategoryButtons();
 					renderExerciseButtons();
+					renderDurationButtons();
 					renderLoadButtons();
 					renderRepButtons();
 					initIpptPicker();
