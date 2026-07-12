@@ -29,6 +29,24 @@
 
 		<!-- Main -->
 			<div id="main">
+				<section id="prices">
+					<div class="box" id="priceBanner">
+						<p style="margin-bottom: 0.5em;">
+							<strong>JB RON97:</strong>
+							<span id="ron97Myr">loading&hellip;</span>
+							<span id="ron97Sgd" style="color: #4acaa8;"></span><br />
+							<small id="fxInfo" style="color: #999;"></small>
+						</p>
+						<hr style="margin: 0.75em 0;" />
+						<p style="margin-bottom: 0;">
+							<strong>SG 95-octane:</strong><br />
+							SPC: <span id="spcPrice">loading&hellip;</span> <small style="color: #999;">&mdash; pay with Amex</small><br />
+							Sinopec: <span id="sinopecPrice">loading&hellip;</span> <small style="color: #999;">&mdash; earn miles</small><br />
+							<small id="sgUpdated" style="color: #999;"></small>
+						</p>
+					</div>
+				</section>
+
 				<section id="one">
 					<header class="major">
 						<h2>JB Malaysia Fuel Calculator</h2>
@@ -140,6 +158,71 @@
 					resultDiv.style.display = 'block';
 					resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 				}
+
+				function formatShortDate(dateString) {
+					return new Date(dateString).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' });
+				}
+
+				function loadJBPrice() {
+					var fuelRequest = fetch('https://api.data.gov.my/data-catalogue/?id=fuelprice&limit=6&sort=-date')
+						.then(function(response) { return response.json(); });
+					var fxRequest = fetch('https://open.er-api.com/v6/latest/SGD')
+						.then(function(response) { return response.json(); });
+
+					fuelRequest.then(function(rows) {
+						var latest = null;
+						for (var i = 0; i < rows.length; i++) {
+							if (rows[i].series_type === 'level' && rows[i].ron97 > 0) {
+								latest = rows[i];
+								break;
+							}
+						}
+						if (!latest) throw new Error('no data');
+						document.getElementById('ron97Myr').textContent = 'RM ' + latest.ron97.toFixed(2) + '/L';
+
+						fxRequest.then(function(fx) {
+							var myrPerSgd = fx.rates.MYR;
+							var sgdPrice = latest.ron97 / myrPerSgd;
+							document.getElementById('ron97Sgd').textContent = '≈ S$' + sgdPrice.toFixed(2) + '/L';
+							document.getElementById('fxInfo').textContent =
+								'SGD/MYR ' + myrPerSgd.toFixed(3) + ' · price effective ' + formatShortDate(latest.date);
+						}).catch(function() {
+							document.getElementById('fxInfo').textContent = 'price effective ' + formatShortDate(latest.date) + ' · FX rate unavailable';
+						});
+					}).catch(function() {
+						document.getElementById('ron97Myr').textContent = 'unavailable';
+					});
+				}
+
+				function loadSGPrices() {
+					// Public read-only endpoint used by sgpetrol.app (prices sourced daily)
+					var supabaseUrl = 'https://wiwyuibmfvjxcmyxcbjy.supabase.co/rest/v1/petrol_prices' +
+						'?select=station,price,fetched_at&grade=eq.95&station=in.(SPC,Sinopec)&order=fetched_at.desc&limit=2';
+					var anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpd3l1aWJtZnZqeGNteXhjYmp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzODE4MTMsImV4cCI6MjA4ODk1NzgxM30.1Vrt1ze8I97nxNcVbMbWALsoPqxhiRR6ll-9GZVaK0E';
+
+					fetch(supabaseUrl, { headers: { apikey: anonKey } })
+						.then(function(response) { return response.json(); })
+						.then(function(rows) {
+							var updated = null;
+							rows.forEach(function(row) {
+								var elementId = row.station === 'SPC' ? 'spcPrice' : 'sinopecPrice';
+								document.getElementById(elementId).textContent = 'S$' + row.price.toFixed(2) + '/L';
+								updated = row.fetched_at;
+							});
+							if (updated) {
+								document.getElementById('sgUpdated').textContent = 'updated ' + formatShortDate(updated);
+							} else {
+								throw new Error('no data');
+							}
+						})
+						.catch(function() {
+							document.getElementById('spcPrice').textContent = 'unavailable';
+							document.getElementById('sinopecPrice').textContent = 'unavailable';
+						});
+				}
+
+				loadJBPrice();
+				loadSGPrices();
 			</script>
 
 	</body>
