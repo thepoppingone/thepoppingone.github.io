@@ -1,0 +1,413 @@
+<!DOCTYPE HTML>
+<!--
+	Strata by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>JB Cinema Showtimes</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!--[if lte IE 8]><script src="assets/js/ie/html5shiv.js"></script><![endif]-->
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="shortcut icon" type="image/png" href="images/favicon.png"/>
+		<!--[if lte IE 8]><link rel="stylesheet" href="assets/css/ie8.css" /><![endif]-->
+		<style>
+			.chips { margin: 0 0 1em 0; }
+			.chip {
+				display: inline-block;
+				margin: 0 0.4em 0.5em 0;
+				padding: 0.15em 0.75em;
+				border: solid 1px #4acaa8;
+				border-radius: 1em;
+				font-size: 0.9em;
+				line-height: 1.8em;
+				white-space: nowrap;
+			}
+			.chip.past { border-color: #ddd; color: #bbb; text-decoration: line-through; }
+			.chip small { color: #999; margin-left: 0.3em; }
+			.movie-list { list-style: none; padding: 0; }
+			.movie-list li { padding: 0; }
+			.movie-list a {
+				display: flex;
+				align-items: center;
+				gap: 0.9em;
+				padding: 0.5em 0;
+				border-bottom: solid 1px #eee;
+			}
+			.movie-list img { width: 42px; height: 60px; object-fit: cover; flex-shrink: 0; background: #f2f2f2; }
+			.movie-list .meta { color: #999; font-size: 0.85em; display: block; line-height: 1.4em; }
+			.cinema-card h4 { margin-bottom: 0.25em; }
+			.cinema-card .dist { color: #999; font-size: 0.85em; margin-bottom: 0.75em; }
+			.cinema-card .dist strong { color: #4acaa8; }
+			.movie-list a > span { min-width: 0; overflow-wrap: anywhere; }
+			ul.actions.date-picker, ul.actions.sort-picker { display: flex; flex-wrap: wrap; gap: 0.5em; }
+			ul.actions.date-picker li, ul.actions.sort-picker li { display: block; padding: 0 !important; width: auto !important; }
+			ul.actions.date-picker .button, ul.actions.sort-picker .button { margin: 0 !important; padding: 0 1em; width: auto !important; }
+			#loadStatus { color: #999; }
+		</style>
+	</head>
+	<body id="top">
+
+		<!-- Header -->
+			<header id="header">
+				<div class="inner">
+					<a href="index.html" class="image avatar"><img src="images/avatar.png" alt="" /></a>
+					<h1><strong>JB Cinema Showtimes</strong><br />
+					GSC &amp; TGV in Johor Bahru,<br />
+					with distance from<br />
+					Woodlands &amp; 2nd Link</h1>
+				</div>
+			</header>
+
+		<!-- Main -->
+			<div id="main">
+				<section id="one">
+					<header class="major">
+						<h2>Johor Bahru Showtimes</h2>
+					</header>
+
+					<ul class="actions date-picker" id="datePicker"></ul>
+					<p id="loadStatus">loading&hellip;</p>
+
+					<div id="movieView">
+						<input type="text" id="movieSearch" placeholder="Search movies&hellip;" style="margin-bottom: 1em;" />
+						<ul class="movie-list" id="movieList"></ul>
+					</div>
+
+					<div id="showtimeView" style="display: none;">
+						<ul class="actions">
+							<li><a href="#" class="button small" id="backButton">&larr; All movies</a></li>
+						</ul>
+						<h3 id="movieTitle"></h3>
+						<p style="margin-bottom: 0.5em;"><small style="color: #999;">Sort cinemas by distance from:</small></p>
+						<ul class="actions sort-picker" id="sortPicker"></ul>
+						<div id="cinemaList"></div>
+						<p><small style="color: #999;">Driving distance/time from the JB-side checkpoint (BSI for Woodlands, KSAB for 2nd Link), without traffic.</small></p>
+					</div>
+				</section>
+
+				<section id="two">
+					<h2>Back to Home</h2>
+					<ul class="actions">
+						<li><a href="index.html" class="button">Return to Homepage</a></li>
+					</ul>
+				</section>
+			</div>
+
+		<!-- Footer -->
+			<footer id="footer">
+				<div class="inner">
+					<ul class="icons">
+						<li><a target="_blank" href="https://twitter.com/pohpengone" class="icon fa-twitter"><span class="label">Twitter</span></a></li>
+						<li><a target="_blank" href="https://github.com/thepoppingoe" class="icon fa-github"><span class="label">Github</span></a></li>
+						<li><a target="_blank" href="https://500px.com/wangpp1" class="icon fa-500px"><span class="label">Dribbble</span></a></li>
+						<li><a target="_blank" href="https://instagram.com/thePoppingOne" class="icon fa-instagram"><span class="label">Email</span></a></li>
+						<li><a target="_blank" href="https://sg.linkedin.com/in/pohpeng" class="icon fa-linkedin"><span class="label">LinkedIn</span></a>
+						<li><a target="_blank" href="https://wangpp.medium.com/" class="fa-brands fa-medium"><span class="label">Medium</span></a>
+					 </li>
+					</ul>
+					<ul class="copyright">
+						<li>&copy; thepoppingone</li><li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+					</ul>
+				</div>
+			</footer>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.poptrox.min.js"></script>
+			<script src="assets/js/skel.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<!--[if lte IE 8]><script src="assets/js/ie/respond.min.js"></script><![endif]-->
+			<script src="assets/js/main.js"></script>
+
+			<script>
+				// Both chains' own websites call these endpoints; no key needed and CORS allows this origin.
+				// Distances are pre-computed driving routes (OSRM) from the JB-side checkpoints:
+				// woodlands = Bangunan Sultan Iskandar CIQ, second = Kompleks Sultan Abu Bakar CIQ.
+				var CINEMAS = [
+					{ id: 'GSC-357', chain: 'GSC', name: 'Sunway Big Box', code: '357', hallGroup: '', lat: 1.397, lon: 103.630, woodlands: [25.6, 25], second: [8.9, 12] },
+					{ id: 'GSC-355', chain: 'GSC', name: 'Paradigm Mall', code: '355', hallGroup: '', lat: 1.515, lon: 103.680, woodlands: [13.6, 14], second: [25.0, 20] },
+					{ id: 'GSC-355P', chain: 'GSC', name: 'Premiere, Paradigm Mall', code: '355', hallGroup: 'PMPLUS_PJB', lat: 1.515, lon: 103.680, woodlands: [13.6, 14], second: [25.0, 20] },
+					{ id: 'GSC-359', chain: 'GSC', name: 'KSL City Mall', code: '359', hallGroup: '', lat: 1.485, lon: 103.762, woodlands: [3.6, 6], second: [29.5, 25] },
+					{ id: 'GSC-356', chain: 'GSC', name: 'Mid Valley Southkey', code: '356', hallGroup: '', lat: 1.501, lon: 103.770, woodlands: [6.5, 9], second: [32.0, 27] },
+					{ id: 'GSC-368', chain: 'GSC', name: 'Aurum, Mid Valley Southkey', code: '368', hallGroup: 'AURUMJB', lat: 1.501, lon: 103.770, woodlands: [6.5, 9], second: [32.0, 27] },
+					{ id: 'GSC-360', chain: 'GSC', name: 'AEON Dato Onn', code: '360', hallGroup: '', lat: 1.560, lon: 103.730, woodlands: [17.1, 18], second: [34.8, 30] },
+					{ id: 'TGV-BI0', chain: 'TGV', name: 'Bukit Indah', code: 'BI0', lat: 1.48224514, lon: 103.65692, woodlands: [16.8, 18], second: [18.3, 16] },
+					{ id: 'TGV-KUL', chain: 'TGV', name: 'Kulaijaya', code: 'KUL', lat: 1.639445282, lon: 103.6172346, woodlands: [33.3, 29], second: [34.2, 26] },
+					{ id: 'TGV-TSC', chain: 'TGV', name: 'Tasek Central', code: 'TSC', lat: 1.513735535, lon: 103.6551425, woodlands: [17.5, 18], second: [23.3, 21] },
+					{ id: 'TGV-TBR', chain: 'TGV', name: 'Tebrau City', code: 'TBR', lat: 1.54852358, lon: 103.794848, woodlands: [12.7, 12], second: [36.0, 28] },
+					{ id: 'TGV-TOP', chain: 'TGV', name: 'Toppen', code: 'TOP', lat: 1.55422303, lon: 103.798244, woodlands: [14.1, 13], second: [37.5, 29] }
+				];
+				var CHECKPOINTS = { woodlands: 'Woodlands', second: '2nd Link' };
+				var DAY_LABELS = ['Today', 'Tomorrow'];
+
+				var movies = {};      // normalized title -> { title, poster, info, shows: { cinemaId: [show] } }
+				var selectedDate = null;
+				var selectedMovie = null;
+				var sortBy = readSetting('jbCinemaSortBy', 'woodlands');
+				var loadToken = 0;
+
+				function readSetting(key, fallback) {
+					try { return localStorage.getItem(key) || fallback; } catch (e) { return fallback; }
+				}
+
+				function writeSetting(key, value) {
+					try { localStorage.setItem(key, value); } catch (e) {}
+				}
+
+				function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+				function isoDate(date) {
+					return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+				}
+
+				function escapeHtml(text) {
+					return String(text).replace(/[&<>"']/g, function(c) {
+						return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+					});
+				}
+
+				// "(IMAX) Jailer 2", "Jailer 2 (Tamil)" and "Jailer 2" all become "jailer 2";
+				// TGV appends Chinese titles ("Go for Broke 2 重生2"), so drop everything from the first non-ASCII char
+				function normalizeTitle(title) {
+					return title.replace(/\([^)]*\)/g, ' ')
+						.replace(/[^\x00-\x7F].*$/, '')
+						.toLowerCase()
+						.replace(/[^a-z0-9]+/g, ' ')
+						.trim();
+				}
+
+				function addShow(title, poster, info, cinemaId, show) {
+					var key = normalizeTitle(title) || title;
+					var movie = movies[key];
+					if (!movie) {
+						movie = movies[key] = { title: title.trim(), poster: poster, info: info, shows: {} };
+					}
+					if (!movie.poster && poster) movie.poster = poster;
+					if (!movie.info && info) movie.info = info;
+					(movie.shows[cinemaId] = movie.shows[cinemaId] || []).push(show);
+				}
+
+				function fetchGSC(cinema, date) {
+					var url = 'https://epaymentapi.gsc.com.my/showtimews/service.asmx/getShowTimesByLocation_ParentChild_V2' +
+						'?locationid=' + cinema.code + '&oprndate=' + date + '&hallGroup=' + cinema.hallGroup;
+					return fetch(url)
+						.then(function(response) { return response.text(); })
+						.then(function(text) {
+							var xml = new DOMParser().parseFromString(text, 'application/xml');
+							if (xml.getElementsByTagName('parsererror').length) throw new Error('bad xml');
+							var parents = xml.getElementsByTagName('parent');
+							for (var i = 0; i < parents.length; i++) {
+								var title = parents[i].getAttribute('title');
+								var children = parents[i].getElementsByTagName('child');
+								for (var j = 0; j < children.length; j++) {
+									var child = children[j];
+									var formatMatch = /^\(([^)]*)\)/.exec(child.getAttribute('title').trim());
+									var info = [child.getAttribute('lang'), child.getAttribute('rating') && 'Rated ' + child.getAttribute('rating'),
+										child.getAttribute('duration') && child.getAttribute('duration') + ' min'].filter(Boolean).join(' · ');
+									var shows = child.getElementsByTagName('show');
+									for (var k = 0; k < shows.length; k++) {
+										var time = shows[k].getAttribute('time');
+										addShow(title, child.getAttribute('thumb_small'), info, cinema.id, {
+											start: new Date(shows[k].getAttribute('date') + 'T' + time.slice(0, 2) + ':' + time.slice(2) + ':00'),
+											format: formatMatch ? formatMatch[1] : (shows[k].getAttribute('type') === '2D' ? '' : shows[k].getAttribute('type'))
+										});
+									}
+								}
+							}
+						});
+				}
+
+				function fetchTGV(cinema, date) {
+					return fetch('https://api.tgv.com.my/api/boxoffice/v1/moviesession_get', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ cinemaid: cinema.code, movieid: '', businessdate: date })
+					})
+						.then(function(response) { return response.json(); })
+						.then(function(data) {
+							if (!data.success) throw new Error('tgv error');
+							var details = {};
+							(data.results.movies || []).forEach(function(movie) {
+								var poster = (movie.assets || []).filter(function(a) { return a.assetkey === 'poster'; })[0];
+								var movieinfo = (movie.extdata && movie.extdata.movieinfo) || {};
+								details[movie.recid] = {
+									name: movie.name,
+									poster: poster ? poster.extdata.fileinfo.fileurl : null,
+									info: [movieinfo.lang, movieinfo.rating && 'Rated ' + movieinfo.rating].filter(Boolean).join(' · ')
+								};
+							});
+							(data.results.businessday.cinemas || []).forEach(function(c) {
+								(c.movies || []).forEach(function(movie) {
+									var detail = details[movie.movieid];
+									if (!detail) return;
+									movie.experiences.forEach(function(exp) {
+										exp.sessions.forEach(function(session) {
+											addShow(detail.name, detail.poster, detail.info, cinema.id, {
+												start: new Date(session.showtimemy),
+												format: exp.experience === 'deluxe' ? '' : exp.experience.replace(/-/g, ' ').toUpperCase()
+											});
+										});
+									});
+								});
+							});
+						});
+				}
+
+				function loadDate(date) {
+					var token = ++loadToken;
+					selectedDate = date;
+					movies = {};
+					renderDatePicker();
+					document.getElementById('loadStatus').textContent = 'loading showtimes from ' + CINEMAS.length + ' cinemas…';
+					document.getElementById('movieList').innerHTML = '';
+
+					var failed = [];
+					var requests = CINEMAS.map(function(cinema) {
+						var request = cinema.chain === 'GSC' ? fetchGSC(cinema, date) : fetchTGV(cinema, date);
+						return request.catch(function() { failed.push(cinema.chain + ' ' + cinema.name); });
+					});
+
+					Promise.all(requests).then(function() {
+						if (token !== loadToken) return;
+						var count = Object.keys(movies).length;
+						var status = count + ' movies';
+						if (failed.length) status += ' · unavailable: ' + failed.join(', ');
+						document.getElementById('loadStatus').textContent = status;
+						if (selectedMovie && movies[selectedMovie]) {
+							renderShowtimes();
+						} else {
+							showMovieList();
+						}
+					});
+				}
+
+				function renderDatePicker() {
+					var html = '';
+					var today = new Date();
+					for (var i = 0; i < DAY_LABELS.length; i++) {
+						var day = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+						var iso = isoDate(day);
+						var label = DAY_LABELS[i] + ' · ' + day.toLocaleDateString('en-SG', { weekday: 'short', day: 'numeric', month: 'short' });
+						html += '<li><a href="#" class="button small' + (iso === selectedDate ? ' special' : '') +
+							'" data-date="' + iso + '">' + label + '</a></li>';
+					}
+					document.getElementById('datePicker').innerHTML = html;
+				}
+
+				function countShows(movie) {
+					var total = 0;
+					for (var id in movie.shows) total += movie.shows[id].length;
+					return total;
+				}
+
+				function renderMovieList() {
+					var query = normalizeTitle(document.getElementById('movieSearch').value);
+					var keys = Object.keys(movies).filter(function(key) {
+						return !query || key.indexOf(query) !== -1;
+					});
+					keys.sort(function(a, b) { return movies[a].title.localeCompare(movies[b].title); });
+
+					document.getElementById('movieList').innerHTML = keys.map(function(key) {
+						var movie = movies[key];
+						var cinemaCount = Object.keys(movie.shows).length;
+						return '<li><a href="#" data-movie="' + escapeHtml(key) + '">' +
+							(movie.poster ? '<img src="' + escapeHtml(movie.poster) + '" alt="" loading="lazy" />' : '<img alt="" />') +
+							'<span>' + escapeHtml(movie.title) +
+							'<span class="meta">' + (movie.info ? escapeHtml(movie.info) + '<br />' : '') +
+							cinemaCount + (cinemaCount === 1 ? ' cinema' : ' cinemas') + ' · ' + countShows(movie) + ' showtimes</span>' +
+							'</span></a></li>';
+					}).join('') || '<li style="color: #999;">No movies found.</li>';
+				}
+
+				function showMovieList() {
+					selectedMovie = null;
+					document.getElementById('showtimeView').style.display = 'none';
+					document.getElementById('movieView').style.display = 'block';
+					renderMovieList();
+				}
+
+				function formatTime(date) {
+					return date.toLocaleTimeString('en-SG', { hour: 'numeric', minute: '2-digit' });
+				}
+
+				function renderShowtimes() {
+					var movie = movies[selectedMovie];
+					document.getElementById('movieTitle').textContent = movie.title;
+
+					document.getElementById('sortPicker').innerHTML = Object.keys(CHECKPOINTS).map(function(key) {
+						return '<li><a href="#" class="button small' + (key === sortBy ? ' special' : '') +
+							'" data-sort="' + key + '">' + CHECKPOINTS[key] + '</a></li>';
+					}).join('');
+
+					var cinemas = CINEMAS.filter(function(c) { return movie.shows[c.id]; });
+					cinemas.sort(function(a, b) { return a[sortBy][0] - b[sortBy][0]; });
+
+					var now = new Date();
+					document.getElementById('cinemaList').innerHTML = cinemas.map(function(cinema) {
+						var shows = movie.shows[cinema.id].slice().sort(function(a, b) { return a.start - b.start; });
+						var chips = shows.map(function(show) {
+							var afterMidnight = isoDate(show.start) !== selectedDate;
+							return '<span class="chip' + (show.start < now ? ' past' : '') + '">' + formatTime(show.start) +
+								(afterMidnight ? ' <small>+1</small>' : '') +
+								(show.format ? ' <small>' + escapeHtml(show.format) + '</small>' : '') + '</span>';
+						}).join('');
+						var distances = Object.keys(CHECKPOINTS).map(function(key) {
+							var text = CHECKPOINTS[key] + ' ' + cinema[key][0].toFixed(1) + ' km · ~' + cinema[key][1] + ' min';
+							return key === sortBy ? '<strong>' + text + '</strong>' : text;
+						}).join(' &nbsp;|&nbsp; ');
+						return '<div class="box cinema-card">' +
+							'<h4>' + cinema.chain + ' ' + escapeHtml(cinema.name) + '</h4>' +
+							'<p class="dist">' + distances + '<br />' +
+							'<a target="_blank" href="https://waze.com/ul?ll=' + cinema.lat + ',' + cinema.lon + '&navigate=yes">Waze</a> · ' +
+							'<a target="_blank" href="https://www.google.com/maps/search/?api=1&query=' + cinema.lat + ',' + cinema.lon + '">Google Maps</a></p>' +
+							'<div class="chips">' + chips + '</div>' +
+							'</div>';
+					}).join('');
+				}
+
+				function showMovie(key) {
+					selectedMovie = key;
+					document.getElementById('movieView').style.display = 'none';
+					document.getElementById('showtimeView').style.display = 'block';
+					renderShowtimes();
+					document.getElementById('showtimeView').scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}
+
+				document.getElementById('datePicker').addEventListener('click', function(event) {
+					var target = event.target.closest('[data-date]');
+					if (!target) return;
+					event.preventDefault();
+					loadDate(target.getAttribute('data-date'));
+				});
+
+				document.getElementById('movieList').addEventListener('click', function(event) {
+					var target = event.target.closest('[data-movie]');
+					if (!target) return;
+					event.preventDefault();
+					showMovie(target.getAttribute('data-movie'));
+				});
+
+				document.getElementById('sortPicker').addEventListener('click', function(event) {
+					var target = event.target.closest('[data-sort]');
+					if (!target) return;
+					event.preventDefault();
+					sortBy = target.getAttribute('data-sort');
+					writeSetting('jbCinemaSortBy', sortBy);
+					renderShowtimes();
+				});
+
+				document.getElementById('backButton').addEventListener('click', function(event) {
+					event.preventDefault();
+					showMovieList();
+				});
+
+				document.getElementById('movieSearch').addEventListener('input', renderMovieList);
+
+				loadDate(isoDate(new Date()));
+			</script>
+
+	</body>
+</html>
