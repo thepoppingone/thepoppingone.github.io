@@ -13,6 +13,33 @@
 		<link rel="stylesheet" href="assets/css/main.css" />
 		<link rel="shortcut icon" type="image/png" href="images/favicon.png"/>
 		<!--[if lte IE 8]><link rel="stylesheet" href="assets/css/ie8.css" /><![endif]-->
+		<style>
+			.trend-chart { position: relative; margin-bottom: 1em; }
+			.trend-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+			.trend-chart .grid { stroke: #eee; stroke-width: 1; }
+			.trend-chart .axis-label { fill: #999; font-size: 12px; }
+			.trend-chart .end-label { fill: #555; font-size: 12px; }
+			.trend-chart .crosshair { stroke: #ccc; stroke-width: 1; }
+			.trend-legend { margin-bottom: 0.5em; font-size: 0.9em; color: #555; }
+			.trend-legend span { display: inline-block; margin-right: 1.25em; white-space: nowrap; }
+			.trend-legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 0.4em; }
+			.trend-tooltip {
+				position: absolute;
+				top: 0;
+				pointer-events: none;
+				background: #fff;
+				border: solid 1px #ddd;
+				border-radius: 0.35em;
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+				padding: 0.5em 0.75em;
+				font-size: 0.8em;
+				line-height: 1.6em;
+				color: #555;
+				white-space: nowrap;
+			}
+			.trend-tooltip i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 0.4em; }
+			#trendTable td, #trendTable th { white-space: nowrap; }
+		</style>
 	</head>
 	<body id="top">
 
@@ -45,6 +72,21 @@
 							<small id="sgUpdated" style="color: #999;"></small>
 						</p>
 					</div>
+				</section>
+
+				<section id="trend">
+					<h3>Past 4 weeks (S$ per litre)</h3>
+					<div class="trend-legend" id="trendLegend"></div>
+					<div class="trend-chart" id="trendChart"><p id="trendStatus" style="color: #999;">loading&hellip;</p></div>
+					<div class="table-wrapper">
+						<table id="trendTable" style="display: none;">
+							<thead>
+								<tr><th>Week</th><th>JB RON97</th><th>SPC 95</th><th>Sinopec 95</th><th>JB cheaper by</th></tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+					</div>
+					<p><small style="color: #999;">JB price is the weekly price set every Thursday, converted at that week's SGD/MYR rate. SG prices are the pump price in effect on the last day of each week.</small></p>
 				</section>
 
 				<section id="one">
@@ -221,8 +263,201 @@
 						});
 				}
 
+				var TREND_WEEKS = 4;
+				var TREND_SERIES = [
+					{ key: 'jb', name: 'JB RON97', color: '#2a78d6' },
+					{ key: 'spc', name: 'SPC 95', color: '#eb6834' },
+					{ key: 'sinopec', name: 'Sinopec 95', color: '#1baf7a' }
+				];
+
+				function isoDay(date) {
+					return date.toISOString().slice(0, 10);
+				}
+
+				function addDays(dateString, days) {
+					var date = new Date(dateString + 'T00:00:00Z');
+					date.setUTCDate(date.getUTCDate() + days);
+					return isoDay(date);
+				}
+
+				// Value of the latest entry on or before `date`, from [{ date, value }] sorted ascending
+				function valueOn(entries, date) {
+					var value = null;
+					for (var i = 0; i < entries.length && entries[i].date <= date; i++) value = entries[i].value;
+					return value;
+				}
+
+				function loadTrend() {
+					var supabaseUrl = 'https://wiwyuibmfvjxcmyxcbjy.supabase.co/rest/v1/petrol_prices' +
+						'?select=station,price,fetched_at&grade=eq.95&station=in.(SPC,Sinopec)&order=fetched_at.desc&limit=60';
+					var anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpd3l1aWJtZnZqeGNteXhjYmp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzODE4MTMsImV4cCI6MjA4ODk1NzgxM30.1Vrt1ze8I97nxNcVbMbWALsoPqxhiRR6ll-9GZVaK0E';
+
+					fetch('https://api.data.gov.my/data-catalogue/?id=fuelprice&filter=level@series_type&sort=-date&limit=' + TREND_WEEKS)
+						.then(function(response) { return response.json(); })
+						.then(function(myRows) {
+							myRows = myRows.filter(function(row) { return row.ron97 > 0; }).reverse();
+							if (!myRows.length) throw new Error('no data');
+							var today = isoDay(new Date());
+							var weeks = myRows.map(function(row) {
+								var end = addDays(row.date, 6);
+								return { start: row.date, end: end < today ? end : today, ron97: row.ron97 };
+							});
+
+							var fxRequest = fetch('https://api.frankfurter.dev/v1/' + addDays(weeks[0].start, -7) + '..?from=SGD&to=MYR')
+								.then(function(response) { return response.json(); });
+							var sgRequest = fetch(supabaseUrl, { headers: { apikey: anonKey } })
+								.then(function(response) { return response.json(); });
+
+							return Promise.all([fxRequest, sgRequest]).then(function(results) {
+								var fx = Object.keys(results[0].rates).sort().map(function(date) {
+									return { date: date, value: results[0].rates[date].MYR };
+								});
+								var sg = { SPC: [], Sinopec: [] };
+								results[1].slice().reverse().forEach(function(row) {
+									sg[row.station].push({ date: row.fetched_at.slice(0, 10), value: row.price });
+								});
+								weeks.forEach(function(week) {
+									var myrPerSgd = valueOn(fx, week.end);
+									week.myrPerSgd = myrPerSgd;
+									week.jb = myrPerSgd ? week.ron97 / myrPerSgd : null;
+									week.spc = valueOn(sg.SPC, week.end);
+									week.sinopec = valueOn(sg.Sinopec, week.end);
+								});
+								renderTrendChart(weeks);
+								renderTrendTable(weeks);
+							});
+						})
+						.catch(function() {
+							document.getElementById('trendStatus').textContent = 'Price history unavailable.';
+						});
+				}
+
+				function money(value) {
+					return value == null ? '–' : 'S$' + value.toFixed(2);
+				}
+
+				function weekLabel(week) {
+					return formatShortDate(week.start + 'T00:00:00');
+				}
+
+				function renderTrendChart(weeks) {
+					var width = 600, height = 240;
+					var margin = { top: 12, right: 110, bottom: 28, left: 44 };
+					var plotWidth = width - margin.left - margin.right;
+					var plotHeight = height - margin.top - margin.bottom;
+
+					var values = [];
+					weeks.forEach(function(week) {
+						TREND_SERIES.forEach(function(series) { if (week[series.key] != null) values.push(week[series.key]); });
+					});
+					var min = Math.floor((Math.min.apply(null, values) - 0.05) * 10) / 10;
+					var max = Math.ceil((Math.max.apply(null, values) + 0.05) * 10) / 10;
+					var step = max - min > 1 ? 0.5 : 0.2;
+					min = Math.floor(min / step) * step;
+					max = Math.ceil(max / step) * step;
+
+					function x(i) { return margin.left + (weeks.length === 1 ? plotWidth / 2 : i * plotWidth / (weeks.length - 1)); }
+					function y(value) { return margin.top + (max - value) / (max - min) * plotHeight; }
+
+					var svg = '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Weekly petrol prices in Singapore dollars per litre">';
+					for (var tick = min; tick <= max + 1e-9; tick += step) {
+						svg += '<line class="grid" x1="' + margin.left + '" x2="' + (width - margin.right) + '" y1="' + y(tick) + '" y2="' + y(tick) + '" />' +
+							'<text class="axis-label" x="' + (margin.left - 8) + '" y="' + (y(tick) + 4) + '" text-anchor="end">' + tick.toFixed(2) + '</text>';
+					}
+					weeks.forEach(function(week, i) {
+						svg += '<text class="axis-label" x="' + x(i) + '" y="' + (height - 8) + '" text-anchor="middle">' + weekLabel(week) + '</text>';
+					});
+					svg += '<line class="crosshair" id="trendCrosshair" y1="' + margin.top + '" y2="' + (margin.top + plotHeight) + '" style="display: none;" />';
+
+					var endLabels = [];
+					TREND_SERIES.forEach(function(series) {
+						var points = [];
+						weeks.forEach(function(week, i) {
+							if (week[series.key] != null) points.push([x(i), y(week[series.key])]);
+						});
+						if (!points.length) return;
+						svg += '<polyline fill="none" stroke="' + series.color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="' +
+							points.map(function(p) { return p.join(','); }).join(' ') + '" />';
+						points.forEach(function(p) {
+							svg += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="' + series.color + '" stroke="#fff" stroke-width="2" />';
+						});
+						var last = weeks[weeks.length - 1][series.key];
+						if (last != null) endLabels.push({ y: y(last), text: series.name + ' ' + last.toFixed(2) });
+					});
+
+					// Nudge end labels apart so near-equal prices (SPC vs Sinopec) don't overlap
+					endLabels.sort(function(a, b) { return a.y - b.y; });
+					for (var j = 1; j < endLabels.length; j++) {
+						endLabels[j].y = Math.max(endLabels[j].y, endLabels[j - 1].y + 14);
+					}
+					endLabels.forEach(function(label) {
+						svg += '<text class="end-label" x="' + (width - margin.right + 10) + '" y="' + (label.y + 4) + '">' + label.text + '</text>';
+					});
+
+					weeks.forEach(function(week, i) {
+						var halfStep = plotWidth / Math.max(weeks.length - 1, 1) / 2;
+						svg += '<rect data-week="' + i + '" x="' + (x(i) - halfStep) + '" y="' + margin.top + '" width="' + (halfStep * 2) +
+							'" height="' + plotHeight + '" fill="transparent" />';
+					});
+					svg += '</svg>';
+
+					var chart = document.getElementById('trendChart');
+					chart.innerHTML = svg + '<div class="trend-tooltip" id="trendTooltip" style="display: none;"></div>';
+					document.getElementById('trendLegend').innerHTML = TREND_SERIES.map(function(series) {
+						return '<span><i style="background: ' + series.color + ';"></i>' + series.name + '</span>';
+					}).join('');
+
+					var tooltip = document.getElementById('trendTooltip');
+					var crosshair = document.getElementById('trendCrosshair');
+
+					function showWeek(i) {
+						var week = weeks[i];
+						var sgCheapest = Math.min(week.spc == null ? Infinity : week.spc, week.sinopec == null ? Infinity : week.sinopec);
+						tooltip.innerHTML = '<strong>Week of ' + weekLabel(week) + '</strong><br />' +
+							TREND_SERIES.map(function(series) {
+								return '<i style="background: ' + series.color + ';"></i>' + series.name + ': ' + money(week[series.key]);
+							}).join('<br />') +
+							(week.jb != null && sgCheapest !== Infinity ? '<br />JB cheaper by ' + money(sgCheapest - week.jb) + '/L' : '');
+						tooltip.style.display = 'block';
+						crosshair.setAttribute('x1', x(i));
+						crosshair.setAttribute('x2', x(i));
+						crosshair.style.display = '';
+
+						var scale = chart.clientWidth / width;
+						var left = x(i) * scale + 12;
+						if (left + tooltip.offsetWidth > chart.clientWidth) left = x(i) * scale - tooltip.offsetWidth - 12;
+						tooltip.style.left = Math.max(0, left) + 'px';
+					}
+
+					function hideWeek() {
+						tooltip.style.display = 'none';
+						crosshair.style.display = 'none';
+					}
+
+					chart.querySelectorAll('rect[data-week]').forEach(function(rect) {
+						var i = parseInt(rect.getAttribute('data-week'), 10);
+						rect.addEventListener('pointerenter', function() { showWeek(i); });
+						rect.addEventListener('click', function() { showWeek(i); });
+					});
+					chart.addEventListener('pointerleave', hideWeek);
+				}
+
+				function renderTrendTable(weeks) {
+					var table = document.getElementById('trendTable');
+					table.querySelector('tbody').innerHTML = weeks.slice().reverse().map(function(week) {
+						var sgCheapest = Math.min(week.spc == null ? Infinity : week.spc, week.sinopec == null ? Infinity : week.sinopec);
+						return '<tr><td>' + weekLabel(week) + '</td>' +
+							'<td>' + money(week.jb) + ' <small style="color: #999;">RM ' + week.ron97.toFixed(2) + '</small></td>' +
+							'<td>' + money(week.spc) + '</td>' +
+							'<td>' + money(week.sinopec) + '</td>' +
+							'<td>' + (week.jb != null && sgCheapest !== Infinity ? money(sgCheapest - week.jb) + '/L' : '–') + '</td></tr>';
+					}).join('');
+					table.style.display = '';
+				}
+
 				loadJBPrice();
 				loadSGPrices();
+				loadTrend();
 			</script>
 
 	</body>
