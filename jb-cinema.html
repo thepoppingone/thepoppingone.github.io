@@ -84,7 +84,7 @@
 						<p style="margin-bottom: 0.5em;"><small style="color: #999;">Sort cinemas by distance from:</small></p>
 						<ul class="actions sort-picker" id="sortPicker"></ul>
 						<div id="cinemaList"></div>
-						<p><small style="color: #999;">Driving distance/time from the JB-side checkpoint (BSI for Woodlands, KSAB for 2nd Link), without traffic.</small></p>
+						<p><small style="color: #999;">Prices are the online adult ticket for each showtime; premium halls show their own seat type (e.g. Premiere Chaise, Beanie). Driving distance/time from the JB-side checkpoint (BSI for Woodlands, KSAB for 2nd Link), without traffic.</small></p>
 					</div>
 				</section>
 
@@ -211,8 +211,16 @@
 									for (var k = 0; k < shows.length; k++) {
 										var time = shows[k].getAttribute('time');
 										addShow(title, child.getAttribute('thumb_small'), info, cinema.id, {
+											id: 'gsc-' + cinema.code + '-' + shows[k].getAttribute('id'),
 											start: new Date(shows[k].getAttribute('date') + 'T' + time.slice(0, 2) + ':' + time.slice(2) + ':00'),
-											format: formatMatch ? formatMatch[1] : (shows[k].getAttribute('type') === '2D' ? '' : shows[k].getAttribute('type'))
+											format: formatMatch ? formatMatch[1] : (shows[k].getAttribute('type') === '2D' ? '' : shows[k].getAttribute('type')),
+											priceQuery: {
+												locationid: cinema.code,
+												hallid: shows[k].getAttribute('hid'),
+												filmid: child.getAttribute('code'),
+												showdate: shows[k].getAttribute('date'),
+												showtime: time
+											}
 										});
 									}
 								}
@@ -246,8 +254,14 @@
 									movie.experiences.forEach(function(exp) {
 										exp.sessions.forEach(function(session) {
 											addShow(detail.name, detail.poster, detail.info, cinema.id, {
+												id: 'tgv-' + cinema.code + '-' + session.sessionid,
 												start: new Date(session.showtimemy),
-												format: exp.experience === 'deluxe' ? '' : exp.experience.replace(/-/g, ' ').toUpperCase()
+												format: exp.experience === 'deluxe' ? '' : exp.experience.replace(/-/g, ' ').toUpperCase(),
+												priceQuery: {
+													cinemaid: cinema.code,
+													sessionid: session.sessionid,
+													areas: (session.extdata && session.extdata.areacategorycodes) || []
+												}
 											});
 										});
 									});
@@ -278,6 +292,7 @@
 						document.getElementById('loadStatus').textContent = status;
 						if (selectedMovie && movies[selectedMovie]) {
 							renderShowtimes();
+							loadPrices(selectedMovie);
 						} else {
 							showMovieList();
 						}
@@ -352,7 +367,8 @@
 							var afterMidnight = isoDate(show.start) !== selectedDate;
 							return '<span class="chip' + (show.start < now ? ' past' : '') + '">' + formatTime(show.start) +
 								(afterMidnight ? ' <small>+1</small>' : '') +
-								(show.format ? ' <small>' + escapeHtml(show.format) + '</small>' : '') + '</span>';
+								(show.format ? ' <small>' + escapeHtml(show.format) + '</small>' : '') +
+								'<small class="price" data-show-id="' + escapeHtml(show.id) + '">' + priceText(show) + '</small></span>';
 						}).join('');
 						var distances = Object.keys(CHECKPOINTS).map(function(key) {
 							var text = CHECKPOINTS[key] + ' ' + cinema[key][0].toFixed(1) + ' km · ~' + cinema[key][1] + ' min';
@@ -368,11 +384,107 @@
 					}).join('');
 				}
 
+				// Adult price for one GSC showtime; premium halls (Premiere, Aurum) have no "Adult" ticket,
+				// so fall back to the hall's own ticket and label it
+				function fetchGSCPrice(query) {
+					var params = Object.keys(query).map(function(key) { return key + '=' + encodeURIComponent(query[key]); }).join('&');
+					return fetch('https://epaymentapi.gsc.com.my/showtimews/service.asmx/getTicketPricingEpaySpecialV5?' + params)
+						.then(function(response) { return response.text(); })
+						.then(function(text) {
+							var xml = new DOMParser().parseFromString(text, 'application/xml');
+							var tickets = Array.prototype.slice.call(xml.getElementsByTagName('ticket'));
+							var adult = tickets.filter(function(t) { return t.getAttribute('type') === 'Adult'; })[0] || tickets[0];
+							if (!adult) return null;
+							return {
+								amount: parseFloat(adult.getAttribute('price')),
+								label: adult.getAttribute('type') === 'Adult' ? '' : adult.getAttribute('type')
+							};
+						});
+				}
+
+				var TGV_NON_ADULT = /kid|child|senior|oku|student|maybank|affin|card|b1f1|promo/i;
+
+				// Adult price for one TGV session: the "SINGLE" ticket, or the hall's own ticket (e.g. Beanie)
+				function fetchTGVPrice(query) {
+					return Promise.all(query.areas.map(function(area) {
+						return fetch('https://api.tgv.com.my/api/boxoffice/v1/moviesession_gettickets', {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({ cinemaid: query.cinemaid, sessionid: query.sessionid, areacategorycodes: area })
+						})
+							.then(function(response) { return response.text(); })
+							// TGV sometimes returns raw control characters inside strings, which JSON.parse rejects
+							.then(function(text) { return JSON.parse(text.replace(/[\u0000-\u001f]/g, ' ')); })
+							.then(function(data) { return (data.results && data.results.tickets) || []; })
+							.catch(function() { return []; });
+					})).then(function(lists) {
+						var tickets = [].concat.apply([], lists).filter(function(t) {
+							return (t.salesChannels || []).indexOf('WWW') !== -1 && !t.isAvailableForLoyaltyMembersOnly;
+						});
+						tickets.sort(function(a, b) { return a.displaySequence - b.displaySequence; });
+						var adult = tickets.filter(function(t) { return t.description === 'SINGLE' && !t.isPackageTicket; })[0] ||
+							tickets.filter(function(t) { return !TGV_NON_ADULT.test(t.description + ' ' + t.descriptionAlt); })[0];
+						if (!adult) return null;
+						return {
+							amount: adult.priceInCents / 100,
+							label: adult.description === 'SINGLE' ? '' : adult.description.charAt(0) + adult.description.slice(1).toLowerCase()
+						};
+					});
+				}
+
+				function priceText(show) {
+					if (show.price) return ' · RM' + show.price.amount.toFixed(2) + (show.price.label ? ' ' + escapeHtml(show.price.label) : '');
+					if (show.priceState === 'loading') return ' · RM…';
+					return '';
+				}
+
+				var PRICE_CONCURRENCY = 6;
+
+				// Prices are one request per showtime, so only fetch them for the movie being viewed and skip past shows
+				function loadPrices(movieKey) {
+					var movie = movies[movieKey];
+					var now = new Date();
+					var queue = [];
+					Object.keys(movie.shows).forEach(function(cinemaId) {
+						movie.shows[cinemaId].forEach(function(show) {
+							if (show.start >= now && !show.priceState) {
+								show.priceState = 'loading';
+								queue.push(show);
+							}
+						});
+					});
+					queue.sort(function(a, b) { return a.start - b.start; });
+					queue.forEach(updatePriceChip);
+
+					function next() {
+						var show = queue.shift();
+						if (!show) return;
+						var request = show.id.indexOf('gsc-') === 0 ? fetchGSCPrice(show.priceQuery) : fetchTGVPrice(show.priceQuery);
+						request
+							.then(function(price) {
+								show.price = price;
+								show.priceState = 'done';
+							})
+							.catch(function() { show.priceState = 'failed'; })
+							.then(function() {
+								updatePriceChip(show);
+								next();
+							});
+					}
+					for (var i = 0; i < PRICE_CONCURRENCY; i++) next();
+				}
+
+				function updatePriceChip(show) {
+					var element = document.querySelector('.price[data-show-id="' + show.id + '"]');
+					if (element) element.innerHTML = priceText(show);
+				}
+
 				function showMovie(key) {
 					selectedMovie = key;
 					document.getElementById('movieView').style.display = 'none';
 					document.getElementById('showtimeView').style.display = 'block';
 					renderShowtimes();
+					loadPrices(key);
 					document.getElementById('showtimeView').scrollIntoView({ behavior: 'smooth', block: 'start' });
 				}
 
