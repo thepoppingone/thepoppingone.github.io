@@ -67,8 +67,10 @@
 						<hr style="margin: 0.75em 0;" />
 						<p style="margin-bottom: 0;">
 							<strong>SG 95-octane:</strong><br />
-							SPC: <span id="spcPrice">loading&hellip;</span> <small style="color: #999;">&mdash; pay with Amex</small><br />
-							Sinopec: <span id="sinopecPrice">loading&hellip;</span> <small style="color: #999;">&mdash; earn miles</small><br />
+							SPC: <span id="spcPrice">loading&hellip;</span> <span id="spcNett" style="color: #4acaa8;"></span><br />
+							<small style="color: #999;">Amex True Cashback: 15% off at pump (5% Amex + 10% SPC&amp;U), then 7.1% statement credit + 1.5% cashback</small><br />
+							Sinopec: <span id="sinopecPrice">loading&hellip;</span> <span id="sinopecNett" style="color: #4acaa8;"></span><br />
+							<small style="color: #999;">Lalamove driver: 28% off at pump, plus S$3 off every S$60 &mdash; pay with miles card</small><br />
 							<small id="sgUpdated" style="color: #999;"></small>
 						</p>
 					</div>
@@ -81,12 +83,12 @@
 					<div class="table-wrapper">
 						<table id="trendTable" style="display: none;">
 							<thead>
-								<tr><th>Week</th><th>JB RON97</th><th>SPC 95</th><th>Sinopec 95</th><th>JB cheaper by</th></tr>
+								<tr><th>Week</th><th>JB RON97</th><th>SPC 95 (Amex)</th><th>Sinopec 95 (Lalamove)</th><th>JB cheaper by</th></tr>
 							</thead>
 							<tbody></tbody>
 						</table>
 					</div>
-					<p><small style="color: #999;">JB price is the weekly price set every Thursday, converted at that week's SGD/MYR rate. SG prices are the pump price in effect on the last day of each week.</small></p>
+					<p><small style="color: #999;">JB price is the weekly price set every Thursday, converted at that week's SGD/MYR rate. SG prices are the pump price in effect on the last day of each week, after the Amex True Cashback (SPC, ~22.3% off) and Lalamove driver (Sinopec, 28% off) discounts; list price struck through.</small></p>
 				</section>
 
 				<section id="one">
@@ -236,6 +238,20 @@
 					});
 				}
 
+				// Effective price after card/driver discounts (both offers valid to 31 Dec 2026):
+				// SPC with Amex True Cashback: 5% Amex + 10% SPC&U off at the pump, then 7.1% statement credit
+				// (capped at S$120/card) and 1.5% cashback on the discounted amount.
+				// Sinopec as a Lalamove driver: 28% instant discount; the extra S$3 off per S$60 gross depends
+				// on the fill amount, so it's left out of the per-litre figure.
+				var SG_DISCOUNT_FACTOR = {
+					SPC: 0.85 * (1 - 0.071 - 0.015),
+					Sinopec: 0.72
+				};
+
+				function nettPrice(station, price) {
+					return price * SG_DISCOUNT_FACTOR[station];
+				}
+
 				function loadSGPrices() {
 					// Public read-only endpoint used by sgpetrol.app (prices sourced daily)
 					var supabaseUrl = 'https://wiwyuibmfvjxcmyxcbjy.supabase.co/rest/v1/petrol_prices' +
@@ -247,8 +263,9 @@
 						.then(function(rows) {
 							var updated = null;
 							rows.forEach(function(row) {
-								var elementId = row.station === 'SPC' ? 'spcPrice' : 'sinopecPrice';
-								document.getElementById(elementId).textContent = 'S$' + row.price.toFixed(2) + '/L';
+								var prefix = row.station === 'SPC' ? 'spc' : 'sinopec';
+								document.getElementById(prefix + 'Price').textContent = 'S$' + row.price.toFixed(2) + '/L';
+								document.getElementById(prefix + 'Nett').textContent = '→ S$' + nettPrice(row.station, row.price).toFixed(2) + '/L nett';
 								updated = row.fetched_at;
 							});
 							if (updated) {
@@ -260,14 +277,16 @@
 						.catch(function() {
 							document.getElementById('spcPrice').textContent = 'unavailable';
 							document.getElementById('sinopecPrice').textContent = 'unavailable';
+							document.getElementById('spcNett').textContent = '';
+							document.getElementById('sinopecNett').textContent = '';
 						});
 				}
 
 				var TREND_WEEKS = 4;
 				var TREND_SERIES = [
 					{ key: 'jb', name: 'JB RON97', color: '#2a78d6' },
-					{ key: 'spc', name: 'SPC 95', color: '#eb6834' },
-					{ key: 'sinopec', name: 'Sinopec 95', color: '#1baf7a' }
+					{ key: 'spc', name: 'SPC (Amex)', color: '#eb6834' },
+					{ key: 'sinopec', name: 'Sinopec (Lalamove)', color: '#1baf7a' }
 				];
 
 				function isoDay(date) {
@@ -320,8 +339,10 @@
 									var myrPerSgd = valueOn(fx, week.end);
 									week.myrPerSgd = myrPerSgd;
 									week.jb = myrPerSgd ? week.ron97 / myrPerSgd : null;
-									week.spc = valueOn(sg.SPC, week.end);
-									week.sinopec = valueOn(sg.Sinopec, week.end);
+									week.spcList = valueOn(sg.SPC, week.end);
+									week.sinopecList = valueOn(sg.Sinopec, week.end);
+									week.spc = week.spcList == null ? null : nettPrice('SPC', week.spcList);
+									week.sinopec = week.sinopecList == null ? null : nettPrice('Sinopec', week.sinopecList);
 								});
 								renderTrendChart(weeks);
 								renderTrendTable(weeks);
@@ -342,7 +363,7 @@
 
 				function renderTrendChart(weeks) {
 					var width = 600, height = 240;
-					var margin = { top: 12, right: 110, bottom: 28, left: 44 };
+					var margin = { top: 12, right: 150, bottom: 28, left: 44 };
 					var plotWidth = width - margin.left - margin.right;
 					var plotHeight = height - margin.top - margin.bottom;
 
@@ -448,8 +469,8 @@
 						var sgCheapest = Math.min(week.spc == null ? Infinity : week.spc, week.sinopec == null ? Infinity : week.sinopec);
 						return '<tr><td>' + weekLabel(week) + '</td>' +
 							'<td>' + money(week.jb) + ' <small style="color: #999;">RM ' + week.ron97.toFixed(2) + '</small></td>' +
-							'<td>' + money(week.spc) + '</td>' +
-							'<td>' + money(week.sinopec) + '</td>' +
+							'<td>' + money(week.spc) + ' <small style="color: #999; text-decoration: line-through;">' + money(week.spcList) + '</small></td>' +
+							'<td>' + money(week.sinopec) + ' <small style="color: #999; text-decoration: line-through;">' + money(week.sinopecList) + '</small></td>' +
 							'<td>' + (week.jb != null && sgCheapest !== Infinity ? money(sgCheapest - week.jb) + '/L' : '–') + '</td></tr>';
 					}).join('');
 					table.style.display = '';
