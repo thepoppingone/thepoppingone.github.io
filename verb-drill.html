@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Japanese Verb Drill</title>
+<link rel="shortcut icon" type="image/png" href="images/favicon.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: one narrow column, a practice card on top, its settings underneath. Group colour (indigo / amber / plum) is the memory aid and follows the verb everywhere. */
+:root{
+  --paper:#EDF0F5; --surface:#FAFBFD; --ink:#18202F; --muted:#586278; --line:#D3D9E4;
+  --accent:#2C4B8F; --on-accent:#FFFFFF;
+  --godan:#2C4B8F; --ichidan:#995808; --irreg:#7A3A80;
+  --ok:#226B42; --bad:#B0342C;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  --display:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#10151F; --surface:#182030; --ink:#E7EBF4; --muted:#9AA4BA; --line:#2A3448;
+    --accent:#93AEEC; --on-accent:#0E1524;
+    --godan:#93AEEC; --ichidan:#E8A650; --irreg:#CF98D6;
+    --ok:#62C58F; --bad:#F2857C; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10151F; --surface:#182030; --ink:#E7EBF4; --muted:#9AA4BA; --line:#2A3448;
+  --accent:#93AEEC; --on-accent:#0E1524;
+  --godan:#93AEEC; --ichidan:#E8A650; --irreg:#CF98D6;
+  --ok:#62C58F; --bad:#F2857C; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--body); font-size:16px; line-height:1.55;
+  padding-block:12px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:560px;margin:0 auto}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+.g-godan{--g:var(--godan)} .g-ichidan{--g:var(--ichidan)} .g-irregular{--g:var(--irreg)}
+
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h1{font-family:var(--display);font-size:26px;font-weight:700;line-height:1.2}
+.home{display:inline-block;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:6px}
+.home:hover{color:var(--accent)}
+.brand-jp{font-size:13px;color:var(--muted);letter-spacing:.06em}
+.score{display:flex;gap:14px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.score b{color:var(--ink);font-size:16px}
+
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:var(--surface);border:1px solid var(--line);padding:4px;border-radius:12px;margin-block:14px}
+.tab{border:0;background:transparent;color:var(--muted);padding:6px 4px;border-radius:9px;display:flex;flex-direction:column;align-items:center;cursor:pointer;min-height:48px;justify-content:center}
+.tab-en{font-size:13px;font-weight:700;line-height:1.3}
+.tab-jp{font-size:11px;line-height:1.3}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 18px}
+.gtag{display:inline-block;font-size:13px;font-weight:700;padding:3px 12px;border-radius:999px;color:var(--g);background:color-mix(in srgb,var(--g) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--g) 40%,var(--surface))}
+.center{text-align:center}
+.verb{font-family:var(--display);font-weight:700;font-size:clamp(46px,15vw,68px);line-height:1.7;text-align:center;margin-top:6px;overflow-wrap:anywhere}
+ruby{ruby-position:over}
+rt{font-family:var(--body);font-size:.27em;font-weight:500;color:var(--muted);letter-spacing:.04em}
+.meaning{text-align:center;color:var(--muted);font-size:15px;margin-bottom:18px}
+.ask{text-align:center;color:var(--muted);font-size:14px;margin-top:14px}
+
+.gbtns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.gbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px;padding:8px 4px;border-radius:12px;cursor:pointer;color:var(--g);background:color-mix(in srgb,var(--g) 10%,var(--surface));border:1.5px solid color-mix(in srgb,var(--g) 45%,var(--surface))}
+.gbtn .jp{font-size:22px;font-weight:700;line-height:1.2}
+.gbtn .en{font-size:12px;color:var(--muted)}
+.gbtn:disabled{cursor:default}
+.gbtn.is-answer{background:var(--g);color:var(--surface);border-color:var(--g)}
+.gbtn.is-answer .en{color:var(--surface)}
+.gbtn.is-wrong{border-color:var(--bad);text-decoration:line-through;text-decoration-thickness:1.5px}
+.gbtn:disabled:not(.is-answer):not(.is-wrong){opacity:.45}
+
+.res{margin-top:18px;border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:12px}
+.pill{display:inline-block;align-self:flex-start;padding:2px 12px;border-radius:999px;font-size:13px;font-weight:700}
+.res.ok .pill{color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--surface))}
+.res.bad .pill{color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--surface))}
+.why{font-size:15px}
+.forms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.forms div{min-width:0}
+.forms small{display:block;font-size:11px;color:var(--muted);letter-spacing:.06em}
+.forms span{font-size:18px;overflow-wrap:anywhere}
+mark{background:none;color:var(--g,var(--accent));font-weight:700}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;border-radius:12px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);font-size:16px;font-weight:700;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.45;cursor:default}
+
+.target{display:flex;flex-direction:column;align-items:center;margin-bottom:14px}
+.target-jp{font-size:24px;font-weight:700;color:var(--g)}
+.target-en{font-size:13px;color:var(--muted)}
+.answer-row{display:flex;gap:8px;margin-bottom:10px}
+#ans{flex:1;min-width:0;font:inherit;font-size:20px;min-height:52px;padding:0 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink)}
+#ans:focus{border-color:var(--accent);outline:none}
+#ans[readonly]{opacity:.75}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+.hint{margin-top:12px;font-size:15px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--g) 10%,var(--surface))}
+.answer{font-family:var(--display);font-size:34px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+.answer-k{font-size:18px;color:var(--muted)}
+.typed{font-size:14px;color:var(--muted)}
+.typed span{color:var(--bad);text-decoration:line-through;font-size:16px}
+.rule{font-size:15px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--g) 10%,var(--surface))}
+
+.opts{margin-top:18px}
+.opts h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px;font-weight:700}
+.opts h3:first-child{margin-top:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:14px;padding:0 14px;min-height:40px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.note{font-size:13px;color:var(--muted);margin-top:10px}
+
+.sec{margin-bottom:26px}
+.sec h2{font-size:18px;font-family:var(--display);font-weight:700;margin-bottom:6px}
+.sec p.lead{font-size:14px;color:var(--muted);margin-bottom:12px}
+.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;font-size:15px}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:500px;font-size:15px}
+th,td{padding:9px 8px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+tr:last-child td{border-bottom:0}
+tr.alt td{background:color-mix(in srgb,var(--accent) 7%,var(--surface))}
+td.end{font-weight:700;font-size:17px}
+td.end small{display:block;font-size:11px;font-weight:400;color:var(--muted)}
+.clusters{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.cluster{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:12px 14px;border-bottom:1px solid var(--line);align-items:center}
+.cluster:last-child{border-bottom:0}
+.cl-from{font-size:20px;font-weight:700}
+.cl-to{font-size:20px;font-weight:700;color:var(--accent);text-align:right}
+.cl-eg{grid-column:1/-1;font-size:13px;color:var(--muted)}
+.traps{display:flex;flex-wrap:wrap;gap:8px}
+.trap{padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:16px}
+.trap small{color:var(--muted);font-size:12px;margin-left:4px}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.pair div{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:15px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+
+.weak-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.weak-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.weak-item b{font-size:18px}
+.weak-item small{display:block;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.weak-item .btn{min-height:40px;padding:0 14px;font-size:14px}
+.acc{display:flex;flex-direction:column;gap:12px}
+.acc-row{display:grid;grid-template-columns:96px minmax(0,1fr) 44px;gap:10px;align-items:center;font-size:14px}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--g)}
+.acc-row span:last-child{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.empty{padding:20px 16px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:15px;text-align:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="home" href="index.html">&larr; Home</a>
+  <header class="top">
+    <div class="brand"><h1>Verb Drill</h1><span class="brand-jp" lang="ja">動詞ドリル</span></div>
+    <div class="score" id="score" aria-live="polite"></div>
+  </header>
+  <nav class="tabs" role="tablist" aria-label="Practice mode">
+    <button class="tab" role="tab" id="t-sort" data-act="tab" data-tab="sort" aria-selected="true"><span class="tab-en">Sort</span><span class="tab-jp" lang="ja">仕分け</span></button>
+    <button class="tab" role="tab" id="t-conj" data-act="tab" data-tab="conj" aria-selected="false"><span class="tab-en">Conjugate</span><span class="tab-jp" lang="ja">活用</span></button>
+    <button class="tab" role="tab" id="t-chart" data-act="tab" data-tab="chart" aria-selected="false"><span class="tab-en">Chart</span><span class="tab-jp" lang="ja">表</span></button>
+    <button class="tab" role="tab" id="t-weak" data-act="tab" data-tab="weak" aria-selected="false"><span class="tab-en">Weak spots</span><span class="tab-jp" lang="ja">苦手</span></button>
+  </nav>
+  <main>
+    <section id="tab-sort" role="tabpanel" aria-labelledby="t-sort">
+      <div class="card" id="sortCard"></div>
+      <div class="opts" id="sortOpts"></div>
+    </section>
+    <section id="tab-conj" role="tabpanel" aria-labelledby="t-conj" hidden>
+      <div class="card" id="conjCard"></div>
+      <div class="opts" id="conjOpts"></div>
+    </section>
+    <section id="tab-chart" role="tabpanel" aria-labelledby="t-chart" hidden></section>
+    <section id="tab-weak" role="tabpanel" aria-labelledby="t-weak" hidden></section>
+  </main>
+</div>
+
+<script>
+/* ---------- Data and conjugation (pure) ---------- */
+const GROUPS={godan:{en:'Godan',jp:'五段'},ichidan:{en:'Ichidan',jp:'一段'},irregular:{en:'Irregular',jp:'不規則'}};
+const FORMS=[
+  {id:'masu',en:'Polite',jp:'ます形',short:'ます'},
+  {id:'nai',en:'Negative',jp:'ない形',short:'ない'},
+  {id:'te',en:'Te-form',jp:'て形',short:'て'},
+  {id:'ta',en:'Past',jp:'た形',short:'た'},
+  {id:'pot',en:'Potential',jp:'可能形',short:'可能'},
+  {id:'vol',en:'Volitional',jp:'意向形',short:'意向'}
+];
+const FORM=Object.fromEntries(FORMS.map(f=>[f.id,f]));
+/* flags: t = trap (shape or sound misleads), i = 行く exception, a = ある exception, n = no potential/volitional */
+const RAW=`買う|かう|godan|to buy|
+会う|あう|godan|to meet|
+言う|いう|godan|to say|
+使う|つかう|godan|to use|
+手伝う|てつだう|godan|to help|
+歌う|うたう|godan|to sing|
+洗う|あらう|godan|to wash|
+思う|おもう|godan|to think|
+習う|ならう|godan|to learn|
+笑う|わらう|godan|to laugh|
+書く|かく|godan|to write|
+聞く|きく|godan|to listen, to ask|
+行く|いく|godan|to go|ti
+歩く|あるく|godan|to walk|
+働く|はたらく|godan|to work|
+弾く|ひく|godan|to play (piano, guitar)|
+置く|おく|godan|to put|
+着く|つく|godan|to arrive|
+泣く|なく|godan|to cry|
+履く|はく|godan|to wear (on the feet)|
+泳ぐ|およぐ|godan|to swim|
+急ぐ|いそぐ|godan|to hurry|
+脱ぐ|ぬぐ|godan|to take off (clothes)|
+話す|はなす|godan|to speak|
+貸す|かす|godan|to lend|
+消す|けす|godan|to turn off, to erase|
+出す|だす|godan|to take out, to submit|
+返す|かえす|godan|to give back|
+探す|さがす|godan|to look for|
+押す|おす|godan|to push|
+直す|なおす|godan|to fix|
+待つ|まつ|godan|to wait|
+持つ|もつ|godan|to hold, to carry|
+立つ|たつ|godan|to stand|
+打つ|うつ|godan|to hit, to type|
+勝つ|かつ|godan|to win|
+死ぬ|しぬ|godan|to die|
+遊ぶ|あそぶ|godan|to play, to hang out|
+呼ぶ|よぶ|godan|to call|
+飛ぶ|とぶ|godan|to fly, to jump|
+選ぶ|えらぶ|godan|to choose|
+運ぶ|はこぶ|godan|to carry|
+飲む|のむ|godan|to drink|
+読む|よむ|godan|to read|
+休む|やすむ|godan|to rest|
+住む|すむ|godan|to live (reside)|
+頼む|たのむ|godan|to ask a favour|
+楽しむ|たのしむ|godan|to enjoy|
+帰る|かえる|godan|to return home|t
+入る|はいる|godan|to enter|t
+走る|はしる|godan|to run|t
+知る|しる|godan|to know|tn
+切る|きる|godan|to cut|t
+要る|いる|godan|to need|tn
+乗る|のる|godan|to ride|
+取る|とる|godan|to take|
+作る|つくる|godan|to make|
+売る|うる|godan|to sell|
+分かる|わかる|godan|to understand|n
+終わる|おわる|godan|to end|n
+始まる|はじまる|godan|to begin|n
+座る|すわる|godan|to sit|
+登る|のぼる|godan|to climb|
+曲がる|まがる|godan|to turn|
+渡る|わたる|godan|to cross|
+ある|ある|godan|to exist (things)|tan
+食べる|たべる|ichidan|to eat|
+見る|みる|ichidan|to see, to watch|
+寝る|ねる|ichidan|to sleep|
+起きる|おきる|ichidan|to wake up|
+出る|でる|ichidan|to leave, to go out|
+着る|きる|ichidan|to wear (on the body)|t
+開ける|あける|ichidan|to open|
+閉める|しめる|ichidan|to close|
+教える|おしえる|ichidan|to teach|
+覚える|おぼえる|ichidan|to memorise|
+忘れる|わすれる|ichidan|to forget|
+答える|こたえる|ichidan|to answer|
+浴びる|あびる|ichidan|to take (a shower)|
+借りる|かりる|ichidan|to borrow|
+降りる|おりる|ichidan|to get off|
+見せる|みせる|ichidan|to show|
+掛ける|かける|ichidan|to hang, to make (a call)|
+疲れる|つかれる|ichidan|to get tired|n
+考える|かんがえる|ichidan|to think about|
+できる|できる|ichidan|to be able, to be done|n
+いる|いる|ichidan|to exist (people, animals)|t
+する|する|irregular|to do|
+来る|くる|irregular|to come|
+勉強する|べんきょうする|irregular|to study|
+散歩する|さんぽする|irregular|to take a walk|`;
+const V=RAW.split('\n').map(l=>{const p=l.split('|');const f=p[4]||'';return{k:p[0],r:p[1],g:p[2],m:p[3],t:f.includes('t'),i:f.includes('i'),a:f.includes('a'),np:f.includes('n')};});
+const byK=Object.fromEntries(V.map(v=>[v.k,v]));
+
+const ROWS={'う':'わいうえお','く':'かきくけこ','ぐ':'がぎぐげご','す':'さしすせそ','つ':'たちつてと','ぬ':'なにぬねの','ぶ':'ばびぶべぼ','む':'まみむめも','る':'らりるれろ'};
+const TE={'う':['って','った'],'つ':['って','った'],'る':['って','った'],'む':['んで','んだ'],'ぶ':['んで','んだ'],'ぬ':['んで','んだ'],'く':['いて','いた'],'ぐ':['いで','いだ'],'す':['して','した']};
+
+function conj(v,form,script){
+  const w=v[script];
+  if(v.np&&(form==='pot'||form==='vol'))return null;
+  if(v.g==='ichidan'){
+    const s=w.slice(0,-1);
+    return{masu:s+'ます',nai:s+'ない',te:s+'て',ta:s+'た',pot:s+'られる',vol:s+'よう'}[form];
+  }
+  if(v.g==='godan'){
+    const e=w.slice(-1),s=w.slice(0,-1),row=ROWS[e];
+    if(form==='masu')return s+row[1]+'ます';
+    if(form==='nai')return v.a?'ない':s+row[0]+'ない';
+    if(form==='te'||form==='ta'){const n=form==='te'?0:1;return v.i?s+['って','った'][n]:s+TE[e][n];}
+    if(form==='pot')return s+row[3]+'る';
+    return s+row[4]+'う';
+  }
+  if(w.endsWith('する')){
+    const p=w.slice(0,-2);
+    return{masu:p+'します',nai:p+'しない',te:p+'して',ta:p+'した',pot:p+'できる',vol:p+'しよう'}[form];
+  }
+  const p=w.slice(0,-2),a=script==='k'?'来':'き',b=script==='k'?'来':'こ';
+  return{masu:p+a+'ます',nai:p+b+'ない',te:p+a+'て',ta:p+a+'た',pot:p+b+'られる',vol:p+b+'よう'}[form];
+}
+const I_ROW='いきしちにひみりぎじぢびぴ',E_ROW='えけせてねへめれげぜでべぺ';
+const shaped=v=>v.r.endsWith('る')&&(I_ROW+E_ROW).includes(v.r.slice(-2,-1));
+function reason(v){
+  if(v.g==='irregular')return 'Only two verbs are truly irregular: する and 来る (くる). Verbs that end in them, like 勉強する, follow the same pattern.';
+  const r=v.r,last=r.slice(-1);
+  if(last!=='る')return `It ends in ${last}, not る. Only verbs ending in る can be ichidan, so this is godan.`;
+  const pre=r.slice(-2,-1);
+  if(v.g==='ichidan')return `The sound before る is ${pre}, an い or え sound. That is the ichidan shape.`+(v.t?' Watch out: it shares its reading with a godan verb.':'');
+  if(shaped(v))return `It looks ichidan (${pre}る) but it is godan. This is one of the traps to memorise.`;
+  return `The sound before る is ${pre}, an あ, う or お sound, so it is godan.`;
+}
+function rule(v,f){
+  const suf={masu:'ます',nai:'ない',te:'て',ta:'た',pot:'られる',vol:'よう'}[f];
+  if(v.g==='ichidan')return `Ichidan: drop <mark>る</mark>, add <mark>${suf}</mark>`;
+  if(v.g==='irregular'){
+    const base=v.r.endsWith('する')?'する':'くる';
+    const m={'する':{masu:'します',nai:'しない',te:'して',ta:'した',pot:'できる',vol:'しよう'},'くる':{masu:'きます',nai:'こない',te:'きて',ta:'きた',pot:'こられる',vol:'こよう'}}[base][f];
+    return `Irregular: <mark>${base}</mark> becomes <mark>${m}</mark>`;
+  }
+  const e=v.r.slice(-1),row=ROWS[e];
+  if(v.i&&(f==='te'||f==='ta'))return `Exception: 行く uses <mark>く → ${f==='te'?'って':'った'}</mark>, not ${f==='te'?'いて':'いた'}`;
+  if(v.a&&f==='nai')return 'Exception: ある has no あらない. The negative is just <mark>ない</mark>';
+  const to={masu:row[1]+'ます',nai:row[0]+'ない',te:TE[e][0],ta:TE[e][1],pot:row[3]+'る',vol:row[4]+'う'}[f];
+  return `Godan: <mark>${e}</mark> becomes <mark>${to}</mark>`;
+}
+/*--UI--*/
+/* ---------- State ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const KEY='jvd:v1';
+let store={stats:{},set:{}};
+try{const t=localStorage.getItem(KEY);if(t){const o=JSON.parse(t);store.stats=o.stats||{};store.set=o.set||{};}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){}}
+const st=Object.assign({groups:{godan:true,ichidan:true,irregular:true},forms:{masu:true,nai:true,te:true,ta:true,pot:false,vol:false},traps:false,weakOnly:false,showGroup:true},store.set);
+function saveSet(){store.set=st;save();}
+const session={streak:0,right:0,tries:0};
+let touched=false,tab='sort',lastSort=null,lastConj=null,sortQ=null,conjQ=null,resetArmed=false,resetTimer=null;
+
+const isWeakS=s=>!!s&&s.miss>0&&s.miss>=s.ok*0.5;
+const isWeak=k=>isWeakS(store.stats[k]);
+const weight=k=>{const s=store.stats[k];return s?Math.max(0.25,1+s.miss*2-s.ok*0.6):1;};
+function pick(c,last){
+  const pool=c.length>1?c.filter(x=>x.key!==last):c;
+  const ws=pool.map(x=>weight(x.key));let r=Math.random()*ws.reduce((a,b)=>a+b,0);
+  for(let j=0;j<pool.length;j++){r-=ws[j];if(r<=0)return pool[j];}
+  return pool[pool.length-1];
+}
+function record(key,ok,credit){
+  const s=store.stats[key]||(store.stats[key]={ok:0,miss:0});
+  if(ok){if(credit)s.ok++;}else s.miss++;
+  save();
+}
+function tally(ok,credit){
+  session.tries++;
+  if(ok){session.right++;if(credit)session.streak++;}else session.streak=0;
+  renderScore();
+}
+function renderScore(){
+  $('#score').innerHTML=`<span><b>${session.streak}</b> in a row</span><span><b>${session.right}/${session.tries}</b> this session</span>`;
+}
+function furi(v){
+  const m=v.k.match(/[ぁ-ゖ]*$/)[0];
+  if(m.length===v.k.length)return esc(v.k);
+  return `<ruby>${esc(v.k.slice(0,v.k.length-m.length))}<rt>${esc(v.r.slice(0,v.r.length-m.length))}</rt></ruby>${esc(m)}`;
+}
+function hl(base,ans){let c=0;while(c<base.length&&c<ans.length&&base[c]===ans[c])c++;return esc(ans.slice(0,c))+'<mark>'+esc(ans.slice(c))+'</mark>';}
+const gtag=g=>`<span class="gtag g-${g}">${GROUPS[g].jp} ${GROUPS[g].en}</span>`;
+
+/* ---------- Sort ---------- */
+function sortCands(){
+  let c=V.filter(v=>!st.traps||v.t).map(v=>({key:'s:'+v.k,v}));
+  if(st.weakOnly){const w=c.filter(x=>isWeak(x.key));if(w.length)return{c:w,fb:false};return{c,fb:true};}
+  return{c,fb:false};
+}
+function nextSort(){const x=pick(sortCands().c,lastSort);lastSort=x.key;sortQ={v:x.v,answered:null};renderSort();}
+function renderSort(){
+  const v=sortQ.v,a=sortQ.answered;
+  const btns=['godan','ichidan','irregular'].map(g=>{
+    let c='gbtn g-'+g;
+    if(a){if(g===v.g)c+=' is-answer';else if(g===a.choice)c+=' is-wrong';}
+    return `<button class="${c}" data-act="sort" data-g="${g}" ${a?'disabled':''}><span class="jp" lang="ja">${GROUPS[g].jp}</span><span class="en">${GROUPS[g].en}</span></button>`;
+  }).join('');
+  let res='<p class="ask">Which group is it?</p>';
+  if(a){
+    const forms=['masu','nai','te','ta'].map(f=>`<div><small lang="ja">${FORM[f].jp}</small><span lang="ja">${hl(v.r,conj(v,f,'r'))}</span></div>`).join('');
+    res=`<div class="res ${a.ok?'ok':'bad'} g-${v.g}">
+      <span class="pill">${a.ok?'Correct':'Not quite'}</span>
+      <p class="why">${gtag(v.g)} ${esc(reason(v))}</p>
+      <div class="forms">${forms}</div>
+      <button class="btn block" id="sortNext" data-act="sortnext">Next verb</button>
+    </div>`;
+  }
+  $('#sortCard').innerHTML=`<div class="verb g-${v.g}" lang="ja" style="--g:var(--ink)">${furi(v)}</div><div class="meaning">${esc(v.m)}</div><div class="gbtns">${btns}</div>${res}`;
+  if(a&&touched){const b=$('#sortNext');if(b)b.focus({preventScroll:true});}
+}
+function answerSort(g){
+  if(sortQ.answered)return;touched=true;
+  const ok=g===sortQ.v.g;
+  record('s:'+sortQ.v.k,ok,true);tally(ok,true);
+  sortQ.answered={choice:g,ok};renderSort();
+}
+function renderSortOpts(){
+  const {fb}=sortCands();
+  $('#sortOpts').innerHTML=`<h3>Practice set</h3><div class="chips">
+    <button class="chip" data-act="opt" data-o="traps" aria-pressed="${st.traps}">Traps only</button>
+    <button class="chip" data-act="opt" data-o="weakOnly" aria-pressed="${st.weakOnly}">Weak spots only</button></div>
+    ${st.weakOnly&&fb?'<p class="note">No weak spots yet, so you are seeing every verb.</p>':''}
+    <p class="note">Traps are godan verbs that look ichidan (帰る, 入る, 走る) and verbs that share a reading (切る / 着る).</p>`;
+}
+
+/* ---------- Conjugate ---------- */
+function conjCands(){
+  const c=[];
+  V.forEach(v=>{
+    if(!st.groups[v.g])return;
+    if(st.traps&&!(v.t||v.i||v.a))return;
+    FORMS.forEach(f=>{if(st.forms[f.id]&&conj(v,f.id,'r')!==null)c.push({key:'c:'+v.k+':'+f.id,v,f:f.id});});
+  });
+  if(st.weakOnly){const w=c.filter(x=>isWeak(x.key));if(w.length)return{c:w,fb:false};return{c,fb:true};}
+  return{c,fb:false};
+}
+function nextConj(){
+  const {c}=conjCands();
+  if(!c.length){conjQ=null;renderConj();return;}
+  const x=pick(c,lastConj);lastConj=x.key;
+  conjQ={v:x.v,f:x.f,answered:null,hint:false};renderConj();
+  if(touched){const i=$('#ans');if(i)i.focus({preventScroll:true});}
+}
+function renderConj(){
+  if(!conjQ){$('#conjCard').innerHTML='<div class="empty">No verbs match these settings. Switch a group or form back on below.</div>';return;}
+  const v=conjQ.v,f=FORM[conjQ.f];
+  $('#conjCard').className='card g-'+v.g;
+  $('#conjCard').innerHTML=`
+    <div class="center">${st.showGroup?gtag(v.g):'<span class="gtag" style="--g:var(--muted)">Group hidden</span>'}</div>
+    <div class="verb" lang="ja" style="--g:var(--ink)">${furi(v)}</div>
+    <div class="meaning">${esc(v.m)}</div>
+    <div class="target" style="--g:var(--accent)"><span class="target-jp" lang="ja">${f.jp}</span><span class="target-en">${f.en}</span></div>
+    <form id="ansForm" autocomplete="off">
+      <div class="answer-row"><input id="ans" type="text" lang="ja" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ひらがな or 漢字" aria-label="Your answer"></div>
+      <div class="btn-row"><button type="button" class="btn ghost" id="hintBtn" data-act="hint">Hint</button><button type="submit" class="btn" id="conjGo">Check</button></div>
+    </form>
+    <div id="conjHint"></div><div id="conjOut"></div>`;
+}
+function showHint(){
+  if(!conjQ||conjQ.answered)return;
+  conjQ.hint=true;
+  $('#conjHint').innerHTML=`<div class="hint">${rule(conjQ.v,conjQ.f)}</div>`;
+}
+function checkConj(){
+  const q=conjQ;if(!q)return;touched=true;
+  const typed=$('#ans').value.normalize('NFKC').replace(/\s+/g,'');
+  if(!typed){$('#ans').focus();return;}
+  const v=q.v,f=q.f,kana=conj(v,f,'r'),kanji=conj(v,f,'k');
+  const ok=typed===kana||typed===kanji;
+  record('c:'+v.k+':'+f,ok,!q.hint);tally(ok,!q.hint);
+  q.answered={typed,ok};
+  $('#ans').readOnly=true;$('#hintBtn').disabled=true;
+  $('#conjHint').innerHTML='';
+  $('#conjGo').textContent='Next verb';
+  $('#conjOut').innerHTML=`<div class="res ${ok?'ok':'bad'} g-${v.g}">
+    <span class="pill">${ok?'Correct':'Not quite'}</span>
+    <div class="answer" lang="ja">${hl(v.r,kana)}</div>
+    ${kanji!==kana?`<div class="answer-k" lang="ja">${esc(kanji)}</div>`:''}
+    ${ok?'':`<div class="typed">You wrote <span lang="ja">${esc(typed)}</span></div>`}
+    <div class="rule">${rule(v,f)}</div></div>`;
+  $('#conjGo').focus({preventScroll:true});
+}
+function renderConjOpts(){
+  const {fb,c}=conjCands();
+  $('#conjOpts').innerHTML=`<h3>Groups</h3><div class="chips">${Object.keys(GROUPS).map(g=>`<button class="chip" data-act="opt" data-o="group:${g}" aria-pressed="${st.groups[g]}">${GROUPS[g].jp} ${GROUPS[g].en}</button>`).join('')}</div>
+    <h3>Forms</h3><div class="chips">${FORMS.map(f=>`<button class="chip" data-act="opt" data-o="form:${f.id}" aria-pressed="${st.forms[f.id]}"><span lang="ja">${f.jp}</span></button>`).join('')}</div>
+    <h3>Options</h3><div class="chips">
+      <button class="chip" data-act="opt" data-o="traps" aria-pressed="${st.traps}">Traps only</button>
+      <button class="chip" data-act="opt" data-o="weakOnly" aria-pressed="${st.weakOnly}">Weak spots only</button>
+      <button class="chip" data-act="opt" data-o="showGroup" aria-pressed="${st.showGroup}">Show group tag</button></div>
+    ${st.weakOnly&&fb?'<p class="note">No weak spots yet, so you are seeing everything.</p>':''}
+    <p class="note">${c.length} verb and form combinations in this set. Turn off the group tag to make yourself decide the group first. Answers in hiragana or kanji both count.</p>`;
+}
+
+/* ---------- Chart ---------- */
+function table(head,rows){
+  return `<div class="tbl-wrap"><table><thead><tr>${head.map(h=>`<th lang="ja">${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+}
+function renderChart(){
+  const order=['う','つ','る','む','ぶ','ぬ','く','ぐ','す'];
+  const sample={'う':'買う','つ':'待つ','る':'帰る','む':'飲む','ぶ':'遊ぶ','ぬ':'死ぬ','く':'書く','ぐ':'泳ぐ','す':'話す'};
+  const par={'う':0,'つ':0,'る':0,'む':1,'ぶ':1,'ぬ':1,'く':0,'ぐ':1,'す':0};
+  const gRows=order.map(e=>{const row=ROWS[e];
+    return `<tr class="${par[e]?'alt':''}"><td class="end" lang="ja">${e}<small>${sample[e]}</small></td><td lang="ja">${row[1]}ます</td><td lang="ja">${row[0]}ない</td><td lang="ja"><b>${TE[e][0]}</b></td><td lang="ja"><b>${TE[e][1]}</b></td><td lang="ja">${row[3]}る</td><td lang="ja">${row[4]}う</td></tr>`;}).join('');
+  const clusters=[['う・つ・る','って / った',['買う','待つ','帰る']],['む・ぶ・ぬ','んで / んだ',['飲む','遊ぶ','死ぬ']],['く','いて / いた',['書く']],['ぐ','いで / いだ',['泳ぐ']],['す','して / した',['話す']]]
+    .map(c=>`<div class="cluster"><span class="cl-from" lang="ja">${c[0]}</span><span class="cl-to" lang="ja">${c[1]}</span><span class="cl-eg" lang="ja">${c[2].map(k=>`${k} → ${conj(byK[k],'te','k')}`).join('　')}</span></div>`).join('');
+  const mix=['食べる','する','来る'].map(k=>{const v=byK[k];
+    return `<tr><td class="end" lang="ja">${k}<small>${GROUPS[v.g].en}</small></td>${FORMS.map(f=>`<td lang="ja">${conj(v,f.id,'r')}</td>`).join('')}</tr>`;}).join('');
+  const traps=V.filter(v=>v.g==='godan'&&shaped(v)).map(v=>`<span class="trap" lang="ja">${v.k}<small>${v.r}</small></span>`).join('');
+  $('#tab-chart').innerHTML=`
+    <div class="sec"><h2>Which group?</h2><p class="lead">Run these in order. Stop at the first match.</p>
+      <ol class="steps">
+        <li>Is it <b lang="ja">する</b> or <b lang="ja">来る</b>, or does it end in one of them? It is irregular.</li>
+        <li>Does it end in <b lang="ja">る</b>? If not, it is godan.</li>
+        <li>Is the sound before る an <b lang="ja">い</b> or <b lang="ja">え</b> sound? If not, it is godan.</li>
+        <li>Otherwise it is ichidan, unless it is one of the traps below.</li>
+      </ol></div>
+    <div class="sec"><h2>Te-form and past, by ending</h2><p class="lead">Five sound changes cover every godan verb. The past form uses the same sound with た or だ.</p>
+      <div class="clusters">${clusters}</div>
+      <p class="note" lang="ja">例外: 行く → 行って / 行った (not 行いて).</p></div>
+    <div class="sec"><h2>Godan endings, all forms</h2><p class="lead">The last kana of the dictionary form decides everything.</p>
+      ${table(['終','ます','ない','て','た','可能','意向'],[gRows])}</div>
+    <div class="sec"><h2>Ichidan and irregular</h2><p class="lead">Ichidan drops る and adds the suffix. The two irregular verbs are memorised.</p>
+      ${table(['','ます','ない','て','た','可能','意向'].map((h,i)=>i?FORM[FORMS[i-1].id].short:h),[mix]).replace('<th lang="ja"></th>','<th>Verb</th>')}</div>
+    <div class="sec"><h2>Traps</h2><p class="lead">These end in る with an い or え sound, but they are godan.</p>
+      <div class="traps">${traps}</div>
+      <div class="pair">
+        <div><span lang="ja">切る / 着る</span><span class="gtag g-godan">五段 cut</span><span class="gtag g-ichidan">一段 wear</span></div>
+        <div><span lang="ja">要る / いる</span><span class="gtag g-godan">五段 need</span><span class="gtag g-ichidan">一段 exist</span></div>
+      </div><p class="note">Same reading, different group. The kanji tells you which one.</p></div>`;
+}
+
+/* ---------- Weak spots ---------- */
+function renderWeak(){
+  const items=Object.entries(store.stats).filter(([k,s])=>isWeakS(s)).map(([k,s])=>({k,s,score:s.miss*2-s.ok})).sort((a,b)=>b.score-a.score).slice(0,20);
+  let tot=0;const gs={godan:[0,0],ichidan:[0,0],irregular:[0,0]};
+  Object.entries(store.stats).forEach(([k,s])=>{const v=byK[k.split(':')[1]];if(!v)return;gs[v.g][0]+=s.ok;gs[v.g][1]+=s.miss;tot+=s.ok+s.miss;});
+  const acc=Object.keys(gs).map(g=>{const n=gs[g][0]+gs[g][1],p=n?Math.round(gs[g][0]/n*100):null;
+    return `<div class="acc-row g-${g}"><span lang="ja">${GROUPS[g].jp} ${GROUPS[g].en}</span><div class="bar"><i style="width:${p||0}%"></i></div><span>${p===null?'-':p+'%'}</span></div>`;}).join('');
+  const list=items.length?items.map(({k,s})=>{const p=k.split(':'),v=byK[p[1]];
+    const sub=p[0]==='s'?'Group sorting':FORM[p[2]].jp+' '+FORM[p[2]].en;
+    return `<div class="weak-item g-${v.g}"><div><b lang="ja">${esc(v.k)}</b> ${gtag(v.g)}<small lang="ja">${sub} · missed ${s.miss} · right ${s.ok}</small></div><button class="btn ghost" data-act="drill" data-k="${esc(k)}">Drill</button></div>`;}).join('')
+    :'<div class="empty">Nothing here yet. Verbs you miss will collect on this page, hardest first.</div>';
+  $('#tab-weak').innerHTML=`<div class="sec"><h2>Accuracy by group</h2>${tot?`<div class="acc">${acc}</div>`:'<div class="empty">Answer a few questions and your accuracy per group will show here.</div>'}</div>
+    <div class="sec"><h2>Weakest first</h2><p class="lead">A verb leaves this list after you get it right a few times. Saved in this browser only.</p>
+      <div class="weak-list">${list}</div>
+      ${items.length?'<div style="margin-top:14px"><button class="btn block" data-act="weakonly">Practise weak spots only</button></div>':''}</div>
+    <div class="sec"><button class="btn ghost block" data-act="reset">${resetArmed?'Tap again to erase all progress':'Reset progress'}</button></div>`;
+}
+
+/* ---------- Wiring ---------- */
+function setTab(t){
+  tab=t;
+  ['sort','conj','chart','weak'].forEach(x=>{
+    $('#tab-'+x).hidden=x!==t;
+    $('#t-'+x).setAttribute('aria-selected',x===t?'true':'false');
+  });
+  if(t==='sort')renderSortOpts();
+  if(t==='conj')renderConjOpts();
+  if(t==='weak')renderWeak();
+}
+function toggleOpt(o){
+  if(o.startsWith('group:')){const g=o.slice(6);const n=Object.values(st.groups).filter(Boolean).length;if(st.groups[g]&&n===1)return;st.groups[g]=!st.groups[g];}
+  else if(o.startsWith('form:')){const f=o.slice(5);const n=Object.values(st.forms).filter(Boolean).length;if(st.forms[f]&&n===1)return;st.forms[f]=!st.forms[f];}
+  else st[o]=!st[o];
+  saveSet();
+  if(tab==='sort'){renderSortOpts();nextSort();}
+  else{renderConjOpts();nextConj();}
+}
+function drill(k){
+  const p=k.split(':'),v=byK[p[1]];if(!v)return;
+  if(p[0]==='s'){lastSort=k;sortQ={v,answered:null};renderSort();setTab('sort');}
+  else{lastConj=k;conjQ={v,f:p[2],answered:null,hint:false};renderConj();setTab('conj');}
+  window.scrollTo({top:0});
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const a=b.dataset.act;
+  if(a==='tab')setTab(b.dataset.tab);
+  else if(a==='sort')answerSort(b.dataset.g);
+  else if(a==='sortnext')nextSort();
+  else if(a==='hint')showHint();
+  else if(a==='opt')toggleOpt(b.dataset.o);
+  else if(a==='drill')drill(b.dataset.k);
+  else if(a==='weakonly'){st.weakOnly=true;saveSet();nextSort();nextConj();setTab('sort');}
+  else if(a==='reset'){
+    if(!resetArmed){resetArmed=true;clearTimeout(resetTimer);resetTimer=setTimeout(()=>{resetArmed=false;if(tab==='weak')renderWeak();},4000);}
+    else{resetArmed=false;store.stats={};save();session.streak=0;session.right=0;session.tries=0;renderScore();nextSort();nextConj();}
+    renderWeak();
+  }
+});
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='ansForm')return;
+  e.preventDefault();
+  if(conjQ&&conjQ.answered)nextConj();else checkConj();
+});
+document.addEventListener('keydown',e=>{
+  if(tab!=='sort'||e.target.closest('input,textarea,button'))return;
+  const m={'1':'godan','2':'ichidan','3':'irregular'}[e.key];
+  if(m&&sortQ&&!sortQ.answered)answerSort(m);
+  else if((e.key==='Enter'||e.key===' ')&&sortQ&&sortQ.answered){e.preventDefault();nextSort();}
+});
+
+renderScore();renderChart();renderSortOpts();renderConjOpts();nextSort();nextConj();
+</script>
+</body>
+</html>
